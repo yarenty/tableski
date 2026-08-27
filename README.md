@@ -22,8 +22,11 @@ Prebuilt binaries (macOS arm64/x86_64, Linux x86_64, Windows x86_64) are attache
 curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
 ```
 
-Windows: download the `.zip` from the releases page. From source: `cargo build --release`.
-`cargo install tableski` becomes available at the first public release.
+Windows: download the `.zip` from the releases page. Or via cargo:
+
+```bash
+cargo install tableski
+```
 
 ## Connect an MCP client
 
@@ -84,6 +87,19 @@ exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.co
 
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
 > NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
+
+## How it compares
+
+Honest positioning — different tools solve different problems:
+
+| | tableski | openpyxl-based Excel MCP servers | Google-Sheets MCPs |
+|---|---|---|---|
+| Ask questions over data | **SQL engine** (DataFusion): joins, aggregates, filters — across sheets *and* file formats | cell/range reads; analysis logic lands in the model's context | per-API calls against live Sheets |
+| Formats | xlsx/xls/ods + CSV + Parquet + NDJSON, one table model | xlsx (often read *and write*, incl. formatting/charts — tableski doesn't edit workbooks) | Google Sheets only |
+| Deployment | single static binary, stateless Streamable HTTP ([Emperor Profile P1](https://github.com/yarenty/emperor-mcp/blob/main/PROFILE.md)) | Python runtime + deps | hosted API + OAuth |
+| Output safety | every tool result framed as data (prompt-injection mitigation) | typically raw | typically raw |
+
+If you need to *edit* workbooks (styles, charts, cell writes), pair tableski with a writer-oriented server; tableski is the analysis and export engine.
 
 ## License
 

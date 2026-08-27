@@ -8,7 +8,13 @@ license = "MIT"
 authors = ["yarenty <yarenty@gmail.com>"]
 repository = "https://github.com/yarenty/tableski"
 homepage = "https://github.com/yarenty/tableski"
+documentation = "https://docs.rs/tableski"
 readme = "README.md"
+keywords = ["mcp", "sql", "excel", "spreadsheet", "datafusion"]
+categories = ["command-line-utilities", "database-implementations", "parser-implementations"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
 axum = "0.8"
