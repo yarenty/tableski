@@ -13,6 +13,36 @@ queryable tables and serves them to AI agents over the
 - Hatched in the [kowalski](https://github.com/yarenty/kowalski) rookery — the `-ski` is
   the family name.
 
+## Install
+
+Prebuilt binaries (macOS arm64/x86_64, Linux x86_64, Windows x86_64) are attached to
+[GitHub releases](https://github.com/yarenty/tableski/releases):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
+```
+
+Windows: download the `.zip` from the releases page. From source: `cargo build --release`.
+`cargo install tableski` becomes available at the first public release.
+
+## Connect an MCP client
+
+tableski is a standard MCP server over stateless Streamable HTTP — point any client at the
+server URL:
+
+```bash
+# Claude Code
+claude mcp add --transport http tableski http://127.0.0.1:8080/
+```
+
+```json
+// Claude Desktop (claude_desktop_config.json) via mcp-remote
+{ "mcpServers": { "tableski": { "command": "npx",
+    "args": ["mcp-remote", "http://127.0.0.1:8080/"] } } }
+```
+
+Or raw HTTP: POST JSON-RPC to `/` with `Accept: application/json` (see below).
+
 ## Run
 
 ```bash
@@ -49,8 +79,11 @@ always), ragged rows, format-only padding (trimmed), unicode sheet names, and a 
 cap that fails loudly instead of cutting silently. The nasty-workbook corpus lives in
 [`fixtures/corpus/`](fixtures/corpus/) — every trait has a fixture and a test.
 
+Try the whole flow in one go: `./scripts/demo.sh` (spreadsheet → question → SQL answer →
+exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.com/charmbracelet/vhs).
+
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
-> NDJSON all serve today; results export to csv/xlsx. Distribution + demo are next.
+> NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
 
 ## License
 
