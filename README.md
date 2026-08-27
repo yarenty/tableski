@@ -16,14 +16,18 @@ queryable tables and serves them to AI agents over the
 ## Run
 
 ```bash
-# Excel: every non-empty sheet becomes a queryable table (typed columns, auto headers)
-cargo run -- --xlsx fixtures/sample.xlsx
-# ...or CSV, or both together:
-cargo run -- --csv fixtures/sample.csv --table data --xlsx fixtures/sample.xlsx
+# One model for every format: --file registers by extension, table name = file stem
+# (.csv .parquet .json/.ndjson/.jsonl; workbooks .xlsx/.xls/.ods = one table per sheet)
+cargo run -- --file fixtures/sample.xlsx --file fixtures/sample.parquet \
+             --file fixtures/sample.ndjson --export-dir ./exports
+# (--csv/--xlsx flags still work; name collisions get _2/_3 suffixes)
 ```
 
-Ask it something (tools: `list_tables`, `query_sql`, `get_schema`, `column_statistics` —
-all output framed as data per Emperor Profile E8):
+Ask it something (tools: `list_tables`, `query_sql`, `get_schema`, `column_statistics`,
+`export_result` — all output framed as data per Emperor Profile E8). SQL joins work across
+formats: an xlsx sheet against a Parquet file against an NDJSON log. `export_result` writes
+a query's rows to `.csv`/`.xlsx` — only inside the `--export-dir` sandbox (relative names,
+no `..`; the tool is disabled unless the operator passes the flag):
 
 ```bash
 curl -s -X POST http://127.0.0.1:8080/ \
@@ -45,8 +49,8 @@ always), ragged rows, format-only padding (trimmed), unicode sheet names, and a 
 cap that fails loudly instead of cutting silently. The nasty-workbook corpus lives in
 [`fixtures/corpus/`](fixtures/corpus/) — every trait has a fixture and a test.
 
-> Status: CSV + Excel (xlsx/xls/ods) work today, hardened against real-world workbooks.
-> Parquet/JSON breadth and result export are next — see the issues for the build plan.
+> Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
+> NDJSON all serve today; results export to csv/xlsx. Distribution + demo are next.
 
 ## License
 

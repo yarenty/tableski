@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tableski::{
-    ACCEPT_STREAMABLE, AppState, HeaderMode, IngestOptions, TableEntry, app_router,
+    ACCEPT_STREAMABLE, AppState, HeaderMode, IngestOptions, TableEntry, app_router, register_path,
     register_workbook,
 };
 
@@ -31,13 +31,21 @@ struct Args {
     /// Maximum data rows per sheet (exceeding this is an error, never a silent cut).
     #[arg(long, default_value_t = 1_000_000)]
     max_rows: usize,
+    /// Data file to register; repeatable. Extension picks the reader:
+    /// .csv .parquet .json/.ndjson/.jsonl .xlsx/.xls/.ods. Table name = file stem
+    /// (workbooks: one table per sheet).
+    #[arg(long = "file")]
+    files: Vec<PathBuf>,
+    /// Enable the export_result tool, sandboxed to this directory.
+    #[arg(long)]
+    export_dir: Option<PathBuf>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    if args.csv.is_none() && args.xlsx.is_none() {
-        return Err("nothing to serve: pass --csv <file> and/or --xlsx <workbook>".into());
+    if args.csv.is_none() && args.xlsx.is_none() && args.files.is_empty() {
+        return Err("nothing to serve: pass --file <data-file> (or --csv/--xlsx)".into());
     }
 
     let ctx = SessionContext::new();
@@ -67,6 +75,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    let opts = IngestOptions {
+        headers: args.headers,
+        max_rows: args.max_rows,
+    };
+    for file in &args.files {
+        tables.extend(register_path(&ctx, file, &opts).await?);
+    }
+
     for t in &tables {
         match &t.sheet {
             Some(sheet) => eprintln!(
@@ -80,7 +96,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let state = AppState::new(Arc::new(ctx), tables);
+    let mut state = AppState::new(Arc::new(ctx), tables);
+    if let Some(dir) = &args.export_dir {
+        std::fs::create_dir_all(dir)?;
+        eprintln!("tableski: export_result enabled -> {}", dir.display());
+        state = state.with_export_dir(dir);
+    }
     let app = app_router(state);
     let addr: SocketAddr = args.bind.parse()?;
     eprintln!("tableski: stateless Streamable HTTP on http://{addr}");

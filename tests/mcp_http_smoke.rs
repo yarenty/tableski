@@ -73,9 +73,10 @@ async fn mcp_initialize_list_and_query_json() {
         .await
         .expect("list json");
     let tools = list["result"]["tools"].as_array().expect("tools array");
-    assert_eq!(tools.len(), 4);
+    assert_eq!(tools.len(), 5);
     let names: Vec<_> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
     assert!(names.contains(&"list_tables"));
+    assert!(names.contains(&"export_result"));
     assert!(names.contains(&"query_sql"));
     assert!(names.contains(&"get_schema"));
     assert!(names.contains(&"column_statistics"));

@@ -3,7 +3,7 @@ name = "tableski"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Every spreadsheet is a table — SQL over data files (CSV today, Excel/Parquet next) served to AI agents over MCP"
+description = "Every spreadsheet is a table — SQL over Excel, CSV, Parquet, and NDJSON served to AI agents over MCP"
 license = "MIT"
 authors = ["yarenty <yarenty@gmail.com>"]
 repository = "https://github.com/yarenty/tableski"
@@ -18,9 +18,9 @@ datafusion = "54"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["full"] }
+rust_xlsxwriter = "0.96"
 calamine = { version = "0.36", features = ["dates"] }
 chrono = "0.4.45"
 
 [dev-dependencies]
 reqwest = { version = "0.13", features = ["json"] }
-rust_xlsxwriter = "0.96.0"

@@ -15,7 +15,10 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 
 pub mod excel;
+pub mod export;
+pub mod register;
 pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
+pub use register::register_path;
 
 /// `Accept` value clients should send (re-exported from the shared transport).
 pub use emperor_mcp::ACCEPT_STREAMABLE;
@@ -65,11 +68,23 @@ impl TableEntry {
 pub struct AppState {
     pub ctx: Arc<SessionContext>,
     pub tables: Vec<TableEntry>,
+    /// Directory result exports may write into; exports are disabled when `None`.
+    pub export_dir: Option<std::path::PathBuf>,
 }
 
 impl AppState {
     pub fn new(ctx: Arc<SessionContext>, tables: Vec<TableEntry>) -> Self {
-        Self { ctx, tables }
+        Self {
+            ctx,
+            tables,
+            export_dir: None,
+        }
+    }
+
+    /// Enable the `export_result` tool, sandboxed to `dir`.
+    pub fn with_export_dir(mut self, dir: impl Into<std::path::PathBuf>) -> Self {
+        self.export_dir = Some(dir.into());
+        self
     }
 
     /// Resolve the target table for schema/statistics tools: the explicit argument if
@@ -185,6 +200,18 @@ fn tools_list_json() -> Value {
                 }
             },
             {
+                "name": "export_result",
+                "description": "Run a SQL query and write the full result set to a .csv or .xlsx file inside the server's configured export directory. Returns the written path and dimensions.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "sql": { "type": "string", "description": "SQL statement producing the rows to export" },
+                        "file": { "type": "string", "description": "Relative file name ending in .csv or .xlsx (subdirectories allowed, no ..)" }
+                    },
+                    "required": ["sql", "file"]
+                }
+            },
+            {
                 "name": "column_statistics",
                 "description": "High-level statistics for every column of a registered table: count, null_count, mean, std, min, max (DataFusion describe).",
                 "inputSchema": {
@@ -248,6 +275,22 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
             let sql = format!("SELECT * FROM {table} LIMIT 0");
             let df = state.ctx.sql(&sql).await.map_err(|e| e.to_string())?;
             let j = schema_to_json(&table, df.schema().as_arrow());
+            Ok(framed_text(
+                &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
+            ))
+        }
+        "export_result" => {
+            let dir = state.export_dir.as_deref().ok_or_else(|| {
+                "exports are disabled — start the server with --export-dir".to_string()
+            })?;
+            let sql = args["sql"]
+                .as_str()
+                .ok_or_else(|| "missing arguments.sql".to_string())?;
+            let file = args["file"]
+                .as_str()
+                .ok_or_else(|| "missing arguments.file".to_string())?;
+            let summary = export::export_query(&state.ctx, sql, dir, file).await?;
+            let j = serde_json::to_value(&summary).map_err(|e| e.to_string())?;
             Ok(framed_text(
                 &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
             ))

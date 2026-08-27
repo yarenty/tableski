@@ -1,9 +1,12 @@
 //! Regenerate `fixtures/sample.xlsx` (two joinable sheets used by the README example).
 //! Run: `cargo run --example generate_fixture`
 
+use datafusion::dataframe::DataFrameWriteOptions;
+use datafusion::prelude::*;
 use rust_xlsxwriter::{ExcelDateTime, Format, Workbook};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut wb = Workbook::new();
     let date_fmt = Format::new().set_num_format("yyyy-mm-dd");
 
@@ -44,6 +47,25 @@ fn main() {
     eprintln!("wrote fixtures/sample.xlsx");
 
     corpus();
+    parquet().await;
+}
+
+/// `fixtures/sample.parquet`: the CSV fixture converted via DataFusion.
+async fn parquet() {
+    let ctx = SessionContext::new();
+    ctx.register_csv("data", "fixtures/sample.csv", CsvReadOptions::new())
+        .await
+        .unwrap();
+    let df = ctx.sql("SELECT * FROM data").await.unwrap();
+    let _ = std::fs::remove_file("fixtures/sample.parquet");
+    df.write_parquet(
+        "fixtures/sample.parquet",
+        DataFrameWriteOptions::new().with_single_file_output(true),
+        None,
+    )
+    .await
+    .unwrap();
+    eprintln!("wrote fixtures/sample.parquet");
 }
 
 /// The hardening corpus (`fixtures/corpus/`): one nasty trait per workbook.
