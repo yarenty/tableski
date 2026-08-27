@@ -1,16 +1,21 @@
-//! **Stateless** Streamable HTTP (JSON + SSE) MCP server: DataFusion tools over a registered CSV.
+//! **Stateless** Streamable HTTP (JSON + SSE) MCP server: DataFusion tools over registered
+//! data files — CSV and Excel workbooks (one table per sheet).
 //!
 //! Transport (stdio / stateless HTTP, SSE framing, parse errors) lives in
 //! [`emperor_mcp::transport`]; this crate only implements the DataFusion tool dispatch via
 //! [`McpHandler`]. No `Mcp-Session-Id` is issued or required — every POST is independent.
+//! Every tool result's text is framed as data ([`emperor_mcp::frame`], Emperor Profile E8).
 
 use axum::Router;
 use datafusion::arrow::datatypes::Schema;
 use datafusion::arrow::util::pretty::pretty_format_batches;
 use datafusion::prelude::*;
-use emperor_mcp::{McpHandler, http_router};
+use emperor_mcp::{FrameKind, McpHandler, frame, http_router};
 use serde_json::{Value, json};
 use std::sync::Arc;
+
+pub mod excel;
+pub use excel::{HeaderMode, SheetInfo, register_workbook};
 
 /// `Accept` value clients should send (re-exported from the shared transport).
 pub use emperor_mcp::ACCEPT_STREAMABLE;
@@ -18,19 +23,79 @@ pub use emperor_mcp::ACCEPT_STREAMABLE;
 /// MCP protocol version reported on `initialize`.
 pub const PROTOCOL_VERSION: &str = "2025-03-26";
 
-/// DataFusion-backed MCP handler: a registered table plus the session context to query it.
+/// One registered table and where it came from (CSV path or workbook sheet).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TableEntry {
+    pub name: String,
+    pub source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sheet: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rows: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub columns: Option<usize>,
+}
+
+impl TableEntry {
+    /// A CSV-backed table.
+    pub fn csv(name: impl Into<String>, path: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            source: path.into(),
+            sheet: None,
+            rows: None,
+            columns: None,
+        }
+    }
+
+    /// A workbook-sheet-backed table.
+    pub fn sheet(info: &SheetInfo, workbook: impl Into<String>) -> Self {
+        Self {
+            name: info.table.clone(),
+            source: workbook.into(),
+            sheet: Some(info.sheet.clone()),
+            rows: Some(info.rows),
+            columns: Some(info.columns),
+        }
+    }
+}
+
+/// DataFusion-backed MCP handler: registered tables plus the session context to query them.
 #[derive(Clone)]
 pub struct AppState {
     pub ctx: Arc<SessionContext>,
-    pub table: String,
+    pub tables: Vec<TableEntry>,
 }
 
 impl AppState {
-    pub fn new(ctx: Arc<SessionContext>, table: impl Into<String>) -> Self {
-        Self {
-            ctx,
-            table: table.into(),
+    pub fn new(ctx: Arc<SessionContext>, tables: Vec<TableEntry>) -> Self {
+        Self { ctx, tables }
+    }
+
+    /// Resolve the target table for schema/statistics tools: the explicit argument if
+    /// given (must be registered), else the only/first registered table.
+    fn resolve_table(&self, args: &Value) -> Result<String, String> {
+        match args.get("table").and_then(Value::as_str) {
+            Some(t) => {
+                if self.tables.iter().any(|e| e.name == t) {
+                    Ok(t.to_string())
+                } else {
+                    Err(format!(
+                        "unknown table `{t}` — registered: {}",
+                        self.table_names().join(", ")
+                    ))
+                }
+            }
+            None => self
+                .tables
+                .first()
+                .map(|e| e.name.clone())
+                .ok_or_else(|| "no tables registered".to_string()),
         }
+    }
+
+    fn table_names(&self) -> Vec<String> {
+        self.tables.iter().map(|e| e.name.clone()).collect()
     }
 }
 
@@ -41,9 +106,16 @@ impl McpHandler for AppState {
     }
 }
 
-/// Build the stateless Streamable HTTP router for this DataFusion table.
+/// Build the stateless Streamable HTTP router over the registered tables.
 pub fn app_router(state: AppState) -> Router {
     http_router(Arc::new(state))
+}
+
+/// A successful tool result whose text content is framed as computed data (Profile E8).
+fn framed_text(text: &str) -> Value {
+    json!({
+        "content": [{ "type": "text", "text": frame(FrameKind::Computed, text) }]
+    })
 }
 
 async fn dispatch_mcp(state: &AppState, body: Value) -> Option<Value> {
@@ -86,31 +158,40 @@ fn tools_list_json() -> Value {
     json!({
         "tools": [
             {
+                "name": "list_tables",
+                "description": "List every registered table: name, source file, source sheet (for workbooks), rows and columns.",
+                "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false }
+            },
+            {
                 "name": "query_sql",
-                "description": "Run an arbitrary SQL query against the registered table and return a pretty-printed result grid.",
+                "description": "Run an arbitrary SQL query against the registered tables (joins across tables/sheets work) and return a pretty-printed result grid.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "sql": { "type": "string", "description": "SQL statement (registered table is available under the configured name)" }
+                        "sql": { "type": "string", "description": "SQL statement; use list_tables for the available table names" }
                     },
                     "required": ["sql"]
                 }
             },
             {
                 "name": "get_schema",
-                "description": "Return column names, Arrow data types, and nullability for the registered table (LIMIT 0 scan).",
+                "description": "Return column names, Arrow data types, and nullability for a registered table (LIMIT 0 scan).",
                 "inputSchema": {
                     "type": "object",
-                    "properties": {},
+                    "properties": {
+                        "table": { "type": "string", "description": "Table name (default: the first registered table)" }
+                    },
                     "additionalProperties": false
                 }
             },
             {
                 "name": "column_statistics",
-                "description": "High-level statistics for every column: count, null_count, mean, std, min, max (DataFusion describe).",
+                "description": "High-level statistics for every column of a registered table: count, null_count, mean, std, min, max (DataFusion describe).",
                 "inputSchema": {
                     "type": "object",
-                    "properties": {},
+                    "properties": {
+                        "table": { "type": "string", "description": "Table name (default: the first registered table)" }
+                    },
                     "additionalProperties": false
                 }
             }
@@ -145,6 +226,12 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
         .unwrap_or_else(|| json!({}));
 
     match name {
+        "list_tables" => {
+            let j = json!({ "tables": state.tables });
+            Ok(framed_text(
+                &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
+            ))
+        }
         "query_sql" => {
             let sql = args["sql"]
                 .as_str()
@@ -154,30 +241,28 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
             let text = pretty_format_batches(&batches)
                 .map_err(|e| e.to_string())?
                 .to_string();
-            Ok(json!({
-                "content": [{ "type": "text", "text": text }]
-            }))
+            Ok(framed_text(&text))
         }
         "get_schema" => {
-            let sql = format!("SELECT * FROM {} LIMIT 0", state.table);
+            let table = state.resolve_table(&args)?;
+            let sql = format!("SELECT * FROM {table} LIMIT 0");
             let df = state.ctx.sql(&sql).await.map_err(|e| e.to_string())?;
-            let j = schema_to_json(&state.table, df.schema().as_arrow());
-            Ok(json!({
-                "content": [{ "type": "text", "text": serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()) }]
-            }))
+            let j = schema_to_json(&table, df.schema().as_arrow());
+            Ok(framed_text(
+                &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
+            ))
         }
         "column_statistics" => {
-            let sql = format!("SELECT * FROM {}", state.table);
+            let table = state.resolve_table(&args)?;
+            let sql = format!("SELECT * FROM {table}");
             let df = state.ctx.sql(&sql).await.map_err(|e| e.to_string())?;
             let desc = df.describe().await.map_err(|e| e.to_string())?;
             let batches = desc.collect().await.map_err(|e| e.to_string())?;
             let text = pretty_format_batches(&batches)
                 .map_err(|e| e.to_string())?
                 .to_string();
-            Ok(json!({
-                "content": [{ "type": "text", "text": text }]
-            }))
+            Ok(framed_text(&text))
         }
-        _ => Err(format!("unknown tool: {}", name)),
+        _ => Err(format!("unknown tool: {name}")),
     }
 }

@@ -4,7 +4,7 @@ use datafusion::prelude::*;
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::time::Duration;
-use tableski::{AppState, app_router};
+use tableski::{AppState, TableEntry, app_router};
 
 const FIXTURE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/sample.csv");
 
@@ -13,7 +13,7 @@ async fn spawn_server() -> (String, tokio::task::JoinHandle<()>) {
     ctx.register_csv("data", FIXTURE, CsvReadOptions::new())
         .await
         .expect("register_csv");
-    let state = AppState::new(Arc::new(ctx), "data");
+    let state = AppState::new(Arc::new(ctx), vec![TableEntry::csv("data", FIXTURE)]);
     let app = app_router(state);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -73,8 +73,9 @@ async fn mcp_initialize_list_and_query_json() {
         .await
         .expect("list json");
     let tools = list["result"]["tools"].as_array().expect("tools array");
-    assert_eq!(tools.len(), 3);
+    assert_eq!(tools.len(), 4);
     let names: Vec<_> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
+    assert!(names.contains(&"list_tables"));
     assert!(names.contains(&"query_sql"));
     assert!(names.contains(&"get_schema"));
     assert!(names.contains(&"column_statistics"));
@@ -101,6 +102,9 @@ async fn mcp_initialize_list_and_query_json() {
         .as_str()
         .expect("tool text");
     assert!(text.contains("alpha") && text.contains("beta"));
+    // Emperor Profile E8: tool output is framed as data.
+    assert!(text.contains("BEGIN_DATA_"), "tool text must be framed");
+    assert!(text.contains("END_DATA_"));
 }
 
 #[tokio::test]

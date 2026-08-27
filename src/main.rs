@@ -3,43 +3,80 @@ use datafusion::prelude::*;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tableski::{ACCEPT_STREAMABLE, AppState, app_router};
+use tableski::{
+    ACCEPT_STREAMABLE, AppState, HeaderMode, TableEntry, app_router, register_workbook,
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "tableski")]
-#[command(about = "MCP Streamable HTTP: SQL, schema, and column stats (DataFusion + CSV)")]
+#[command(
+    about = "Every spreadsheet is a table — SQL, schema, and column stats over CSV/Excel via MCP"
+)]
 struct Args {
     #[arg(long, default_value = "0.0.0.0:8080")]
     bind: String,
+    /// CSV file to register (table name via --table).
     #[arg(long)]
-    csv: PathBuf,
+    csv: Option<PathBuf>,
+    /// Excel workbook (xlsx / xls / ods); every non-empty sheet becomes a table.
+    #[arg(long)]
+    xlsx: Option<PathBuf>,
+    /// Table name for --csv.
     #[arg(long, default_value = "data")]
     table: String,
+    /// First-row handling for workbook sheets.
+    #[arg(long, value_enum, default_value_t = HeaderMode::Auto)]
+    headers: HeaderMode,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    if !args.csv.exists() {
-        return Err(format!("CSV not found: {}", args.csv.display()).into());
+    if args.csv.is_none() && args.xlsx.is_none() {
+        return Err("nothing to serve: pass --csv <file> and/or --xlsx <workbook>".into());
     }
 
     let ctx = SessionContext::new();
-    let path = args.csv.to_str().ok_or("CSV path must be valid UTF-8")?;
-    ctx.register_csv(&args.table, path, CsvReadOptions::new())
-        .await?;
+    let mut tables = Vec::new();
 
-    let state = AppState::new(Arc::new(ctx), args.table.clone());
+    if let Some(csv) = &args.csv {
+        if !csv.exists() {
+            return Err(format!("CSV not found: {}", csv.display()).into());
+        }
+        let path = csv.to_str().ok_or("CSV path must be valid UTF-8")?;
+        ctx.register_csv(&args.table, path, CsvReadOptions::new())
+            .await?;
+        tables.push(TableEntry::csv(&args.table, path));
+    }
 
+    if let Some(xlsx) = &args.xlsx {
+        if !xlsx.exists() {
+            return Err(format!("workbook not found: {}", xlsx.display()).into());
+        }
+        let infos = register_workbook(&ctx, xlsx, args.headers)?;
+        for info in &infos {
+            tables.push(TableEntry::sheet(info, xlsx.display().to_string()));
+        }
+    }
+
+    for t in &tables {
+        match &t.sheet {
+            Some(sheet) => eprintln!(
+                "tableski: table `{}` <- sheet `{}` of `{}` ({} rows)",
+                t.name,
+                sheet,
+                t.source,
+                t.rows.unwrap_or(0)
+            ),
+            None => eprintln!("tableski: table `{}` <- `{}`", t.name, t.source),
+        }
+    }
+
+    let state = AppState::new(Arc::new(ctx), tables);
     let app = app_router(state);
     let addr: SocketAddr = args.bind.parse()?;
-    eprintln!(
-        "tableski: table `{}` <- `{}` | stateless Streamable HTTP on http://{}",
-        args.table,
-        args.csv.display(),
-        addr
-    );
-    eprintln!("Accept header for clients: `{}`", ACCEPT_STREAMABLE);
+    eprintln!("tableski: stateless Streamable HTTP on http://{addr}");
+    eprintln!("Accept header for clients: `{ACCEPT_STREAMABLE}`");
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
     Ok(())
