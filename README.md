@@ -38,8 +38,15 @@ Sheet names are slugified into table names (`People` → `people`, `2024 Orders`
 (`--headers auto|first-row|none` to override). Column types are inferred: integers,
 floats, booleans, dates (as timestamps), text.
 
-> Status: CSV + Excel (xlsx/xls/ods) work today. Hardening for messy real-world workbooks,
-> Parquet/JSON breadth, and result export are next — see the issues for the build plan.
+Real-world workbooks are messy — tableski handles the mess: both Excel date systems
+(1900 **and** 1904), formula cells (cached values ingest; `#DIV/0!`-style errors become
+NULL), merged cells (top-left value, NULL continuations), display formats (raw values,
+always), ragged rows, format-only padding (trimmed), unicode sheet names, and a `--max-rows`
+cap that fails loudly instead of cutting silently. The nasty-workbook corpus lives in
+[`fixtures/corpus/`](fixtures/corpus/) — every trait has a fixture and a test.
+
+> Status: CSV + Excel (xlsx/xls/ods) work today, hardened against real-world workbooks.
+> Parquet/JSON breadth and result export are next — see the issues for the build plan.
 
 ## License
 

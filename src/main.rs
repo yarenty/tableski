@@ -4,7 +4,8 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tableski::{
-    ACCEPT_STREAMABLE, AppState, HeaderMode, TableEntry, app_router, register_workbook,
+    ACCEPT_STREAMABLE, AppState, HeaderMode, IngestOptions, TableEntry, app_router,
+    register_workbook,
 };
 
 #[derive(Parser, Debug)]
@@ -27,6 +28,9 @@ struct Args {
     /// First-row handling for workbook sheets.
     #[arg(long, value_enum, default_value_t = HeaderMode::Auto)]
     headers: HeaderMode,
+    /// Maximum data rows per sheet (exceeding this is an error, never a silent cut).
+    #[arg(long, default_value_t = 1_000_000)]
+    max_rows: usize,
 }
 
 #[tokio::main]
@@ -53,7 +57,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !xlsx.exists() {
             return Err(format!("workbook not found: {}", xlsx.display()).into());
         }
-        let infos = register_workbook(&ctx, xlsx, args.headers)?;
+        let opts = IngestOptions {
+            headers: args.headers,
+            max_rows: args.max_rows,
+        };
+        let infos = register_workbook(&ctx, xlsx, &opts)?;
         for info in &infos {
             tables.push(TableEntry::sheet(info, xlsx.display().to_string()));
         }

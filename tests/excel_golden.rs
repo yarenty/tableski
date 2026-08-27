@@ -7,7 +7,7 @@ use rust_xlsxwriter::{ExcelDateTime, Format, Workbook};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 use std::sync::Arc;
-use tableski::{AppState, HeaderMode, TableEntry, app_router, register_workbook};
+use tableski::{AppState, HeaderMode, IngestOptions, TableEntry, app_router, register_workbook};
 
 /// Write the golden workbook: `People` (typed columns incl. a date), `2024 Orders`
 /// (joinable), `raw` (no headers).
@@ -70,7 +70,7 @@ async fn workbook_registers_typed_tables_and_joins_across_sheets() {
     write_golden(&path);
 
     let ctx = SessionContext::new();
-    let infos = register_workbook(&ctx, &path, HeaderMode::Auto).expect("register");
+    let infos = register_workbook(&ctx, &path, &IngestOptions::default()).expect("register");
 
     // Three sheets, slugified names, correct dimensions.
     let names: Vec<_> = infos.iter().map(|i| i.table.as_str()).collect();
@@ -139,7 +139,15 @@ async fn header_mode_override_forces_first_row_as_data() {
     write_golden(&path);
 
     let ctx = SessionContext::new();
-    let infos = register_workbook(&ctx, &path, HeaderMode::None).expect("register");
+    let infos = register_workbook(
+        &ctx,
+        &path,
+        &IngestOptions {
+            headers: HeaderMode::None,
+            ..Default::default()
+        },
+    )
+    .expect("register");
     // With None, People keeps its header row as a DATA row (4 rows) and col_N names.
     let people = infos.iter().find(|i| i.table == "people").unwrap();
     assert_eq!(people.rows, 4);
@@ -153,7 +161,7 @@ async fn http_tools_serve_workbook_with_framed_output() {
     write_golden(&path);
 
     let ctx = SessionContext::new();
-    let infos = register_workbook(&ctx, &path, HeaderMode::Auto).expect("register");
+    let infos = register_workbook(&ctx, &path, &IngestOptions::default()).expect("register");
     let tables: Vec<TableEntry> = infos
         .iter()
         .map(|i| TableEntry::sheet(i, path.display().to_string()))

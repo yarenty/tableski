@@ -40,12 +40,30 @@ pub struct SheetInfo {
     pub columns: usize,
 }
 
+/// Ingestion options for [`register_workbook`].
+#[derive(Debug, Clone)]
+pub struct IngestOptions {
+    /// First-row handling per sheet.
+    pub headers: HeaderMode,
+    /// Maximum data rows per sheet; exceeding it is a clear error, never a silent cut.
+    pub max_rows: usize,
+}
+
+impl Default for IngestOptions {
+    fn default() -> Self {
+        Self {
+            headers: HeaderMode::Auto,
+            max_rows: 1_000_000,
+        }
+    }
+}
+
 /// Open `path` (xlsx / xls / ods), convert every non-empty sheet to an Arrow
 /// `RecordBatch`, and register each as a DataFusion table. Returns the registered sheets.
 pub fn register_workbook(
     ctx: &SessionContext,
     path: &Path,
-    mode: HeaderMode,
+    opts: &IngestOptions,
 ) -> Result<Vec<SheetInfo>, String> {
     let mut workbook = open_workbook_auto(path)
         .map_err(|e| format!("cannot open workbook {}: {e}", path.display()))?;
@@ -64,7 +82,8 @@ pub fn register_workbook(
             continue;
         }
         let table = unique_slug(&sheet, &mut used);
-        let (batch, rows) = sheet_to_batch(&range, mode)?;
+        let (batch, rows) =
+            sheet_to_batch(&range, opts).map_err(|e| format!("sheet `{sheet}`: {e}"))?;
         let columns = batch.num_columns();
         let mem = MemTable::try_new(batch.schema(), vec![vec![batch]])
             .map_err(|e| format!("sheet `{sheet}`: {e}"))?;
@@ -124,7 +143,9 @@ enum ColType {
 fn merge(a: ColType, cell: &Data) -> ColType {
     use ColType::*;
     let c = match cell {
-        Data::Empty => return a,
+        // Empty cells and formula-error cells (#DIV/0!, #N/A, …) don't influence the
+        // column type; they materialize as NULL.
+        Data::Empty | Data::Error(_) => return a,
         Data::Int(_) => Int,
         // xlsx numbers usually arrive as Float; all-integral Float columns are promoted
         // to Int64 in a second pass in `sheet_to_batch`.
@@ -141,8 +162,7 @@ fn merge(a: ColType, cell: &Data) -> ColType {
     }
 }
 
-fn header_names(range: &Range<Data>, mode: HeaderMode) -> (bool, Vec<String>) {
-    let width = range.width();
+fn header_names(range: &Range<Data>, width: usize, mode: HeaderMode) -> (bool, Vec<String>) {
     let first_row: Vec<&Data> = (0..width)
         .map(|c| range.get((0, c)).unwrap_or(&Data::Empty))
         .collect();
@@ -182,13 +202,41 @@ fn cell_to_millis(dt: &calamine::ExcelDateTime) -> Option<i64> {
         .map(|ndt: NaiveDateTime| ndt.and_utc().timestamp_millis())
 }
 
+/// Effective (height, width): the used range minus trailing rows/columns that contain
+/// only empty or formula-error cells (format-only cells widen calamine's range).
+fn effective_dims(range: &Range<Data>) -> (usize, usize) {
+    let is_blank = |d: &Data| matches!(d, Data::Empty | Data::Error(_));
+    let mut height = 0;
+    let mut width = 0;
+    for r in 0..range.height() {
+        for c in 0..range.width() {
+            if !is_blank(range.get((r, c)).unwrap_or(&Data::Empty)) {
+                height = height.max(r + 1);
+                width = width.max(c + 1);
+            }
+        }
+    }
+    (height, width)
+}
+
 /// Convert one sheet range into a typed `RecordBatch`. Returns (batch, data_row_count).
-fn sheet_to_batch(range: &Range<Data>, mode: HeaderMode) -> Result<(RecordBatch, usize), String> {
-    let (skip_first, names) = header_names(range, mode);
+fn sheet_to_batch(
+    range: &Range<Data>,
+    opts: &IngestOptions,
+) -> Result<(RecordBatch, usize), String> {
+    let (height, width) = effective_dims(range);
+    if height == 0 || width == 0 {
+        return Err("no data cells".to_string());
+    }
+    let (skip_first, names) = header_names(range, width, opts.headers);
     let start = usize::from(skip_first);
-    let height = range.height();
-    let width = range.width();
     let rows = height - start;
+    if rows > opts.max_rows {
+        return Err(format!(
+            "{rows} data rows exceed the row cap of {} — raise --max-rows to ingest this sheet",
+            opts.max_rows
+        ));
+    }
 
     let mut types = vec![ColType::Empty; width];
     for r in start..height {
@@ -267,7 +315,7 @@ fn sheet_to_batch(range: &Range<Data>, mode: HeaderMode) -> Result<(RecordBatch,
             ColType::Text | ColType::Empty => {
                 let vals: Vec<Option<String>> = (start..height)
                     .map(|r| match get(r) {
-                        Data::Empty => None,
+                        Data::Empty | Data::Error(_) => None,
                         Data::String(s) => Some(s.clone()),
                         Data::Float(f) => Some(f.to_string()),
                         Data::Int(i) => Some(i.to_string()),

@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 
 pub mod excel;
-pub use excel::{HeaderMode, SheetInfo, register_workbook};
+pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
 
 /// `Accept` value clients should send (re-exported from the shared transport).
 pub use emperor_mcp::ACCEPT_STREAMABLE;
