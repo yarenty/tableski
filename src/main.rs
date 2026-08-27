@@ -1,9 +1,9 @@
 use clap::Parser;
 use datafusion::prelude::*;
-use tableski::{ACCEPT_STREAMABLE, AppState, app_router};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tableski::{ACCEPT_STREAMABLE, AppState, app_router};
 
 #[derive(Parser, Debug)]
 #[command(name = "tableski")]

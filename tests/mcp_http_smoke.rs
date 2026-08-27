@@ -1,10 +1,10 @@
 //! HTTP integration: JSON-RPC initialize, tools/list, tools/call against the real router + DataFusion.
 
 use datafusion::prelude::*;
-use tableski::{AppState, app_router};
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::time::Duration;
+use tableski::{AppState, app_router};
 
 const FIXTURE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/fixtures/sample.csv");
 

@@ -9,7 +9,6 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('Cargo.toml') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -22,7 +21,6 @@ jobs:
 
   deny:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('Cargo.toml') != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v2
