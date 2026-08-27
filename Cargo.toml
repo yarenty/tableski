@@ -24,3 +24,11 @@ chrono = "0.4.45"
 
 [dev-dependencies]
 reqwest = { version = "0.13", features = ["json"] }
+
+# Keep dev/test artifacts small: the DataFusion tree with full debuginfo overwhelms
+# CI runners at link time (ld bus errors from disk/memory exhaustion).
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
