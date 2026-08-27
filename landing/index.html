@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tableski — every spreadsheet is a table</title>
+<meta name="description" content="tableski serves your spreadsheets to AI agents in SQL. Excel, CSV, Parquet, NDJSON — one penguin-family binary, over MCP.">
+<style>
+:root { --bg:#ffffff; --fg:#1a1d21; --muted:#5c6470; --accent:#0e7490; --card:#f4f6f8; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#0f1419; --fg:#e6e9ec; --muted:#9aa4af; --accent:#22d3ee; --card:#1a2129; }
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); font:18px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+       display:flex; min-height:100vh; align-items:center; justify-content:center; padding:2rem; }
+main { max-width:640px; }
+h1 { font-size:3rem; letter-spacing:-.02em; }
+h1 .ski { color:var(--accent); }
+p.tag { font-size:1.35rem; margin:.75rem 0 1.5rem; }
+p.sub { color:var(--muted); margin-bottom:2rem; }
+pre { background:var(--card); border-radius:10px; padding:1rem 1.25rem; overflow-x:auto;
+      font:15px/1.5 ui-monospace,Menlo,Consolas,monospace; margin-bottom:2rem; }
+.links a { color:var(--accent); text-decoration:none; font-weight:600; margin-right:1.5rem; }
+.links a:hover { text-decoration:underline; }
+footer { margin-top:2.5rem; color:var(--muted); font-size:.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>table<span class="ski">ski</span> 🐧</h1>
+  <p class="tag"><strong>Every spreadsheet is a table</strong> — tableski serves them to your agents in SQL.</p>
+  <p class="sub">Excel, CSV, Parquet, NDJSON → real SQL tables (Apache DataFusion), spoken over the
+     Model Context Protocol. Joins across sheets and formats, typed columns, results exported back
+     to .csv/.xlsx. Single binary, hardened for real-world workbooks.</p>
+  <pre>cargo install tableski
+tableski --file your-workbook.xlsx
+claude mcp add --transport http tableski http://127.0.0.1:8080/</pre>
+  <div class="links">
+    <a href="https://github.com/yarenty/tableski">GitHub</a>
+    <a href="https://crates.io/crates/tableski">crates.io</a>
+    <a href="https://github.com/yarenty/tableski/releases">Binaries</a>
+    <a href="https://docs.rs/tableski">Docs</a>
+  </div>
+  <footer>MIT · hatched in the <a style="color:var(--muted)" href="https://github.com/yarenty/kowalski">kowalski</a> rookery · built on <a style="color:var(--muted)" href="https://github.com/yarenty/emperor-mcp">emperor-mcp</a></footer>
+</main>
+</body>
+</html>
