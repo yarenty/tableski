@@ -13,8 +13,15 @@ queryable tables and serves them to AI agents over the
 - Hatched in the [kowalski](https://github.com/yarenty/kowalski) rookery — the `-ski` is
   the family name.
 
-> Status: under construction — extraction from the kowalski workspace in progress. See the
-> issues for the build plan.
+## Run
+
+```bash
+cargo run -- --csv fixtures/sample.csv --table data
+# stateless Streamable HTTP MCP server on 0.0.0.0:8080 — tools: SQL query, schema, column stats
+```
+
+> Status: CSV works today (carried over with its HTTP smoke tests); Excel ingestion is next.
+> See the issues for the build plan.
 
 ## License
 
