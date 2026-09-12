@@ -3,8 +3,8 @@
 > The public OSS engine only. Work is tracked in this repo's
 > [issues](https://github.com/yarenty/tableski/issues); tick items here when they ship.
 
-Crate version **0.1.0**, licence `MIT OR Apache-2.0`. Not yet on crates.io — the first
-crates.io release will be **1.0.0**.
+Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 2026), licence
+`MIT OR Apache-2.0`. **1.0.0** marks the stable engine API.
 
 ## Done (0.1.0, Aug 2026)
 
@@ -18,22 +18,23 @@ crates.io release will be **1.0.0**.
 - [x] Distribution: release workflow (4 targets), `install.sh`, MCP client config snippets,
       vhs demo (#5). Launch kit: README, announcement drafts, landing page (#6).
 
-## 1.0 — stable engine on crates.io
+## 1.0 — stable engine (#8)
 
 - [ ] Split into a cargo workspace: `tableski-core` (ingest, registration, tools, framing,
-      export) + `tableski` (CLI). CLI flags stay identical; existing tests are the regression fence.
-- [ ] `TableSource` trait so tables can come from something other than files on disk.
+      export) + `tableski` (CLI). CLI flags stay identical; existing tests are the regression fence (#9).
+- [ ] `TableSource` trait so tables can come from something other than files on disk (#10).
 - [ ] Untrusted-SQL guard: reject DDL/DML, external tables and `read_*` table functions when
-      serving clients that are not trusted (opt-in flag).
-- [ ] Per-query limits: memory pool cap, wall-clock timeout, result row/byte cap.
-- [ ] Hostile-SQL test suite (DDL, external table, cartesian blow-up, huge result).
-- [ ] Document performance expectations for large files (what is streamed, what is loaded).
-- [ ] `CHANGELOG.md`, semver policy, `cargo publish`, docs.rs green.
+      serving clients that are not trusted (opt-in flag) (#11).
+- [ ] Per-query limits: memory pool cap, wall-clock timeout, result row/byte cap (#12).
+- [ ] Hostile-SQL test suite (DDL, external table, cartesian blow-up, huge result) (#13).
+- [ ] Document performance expectations for large files (what is streamed, what is loaded) (#14).
+- [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release (#8).
 
 ## Later
 
 - [ ] Live/refreshing table sources behind `TableSource` (e.g. periodically re-read files,
-      in-memory tables updated by a feed).
+      in-memory tables updated by a feed). These may need subscriptions or per-client state;
+      stateless HTTP stays the default and anything stateful is opt-in, designed when it comes.
 - [ ] More formats on request (Arrow IPC, Avro) where DataFusion already has readers.
 - [ ] Optional distributed path (Ballista) only if it keeps the same MCP surface.
 

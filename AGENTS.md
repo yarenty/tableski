@@ -1,6 +1,6 @@
 # tableski — AI agent notes
 
-**Crate**: `tableski` · **Version**: 0.1.0 (crates.io publish planned for 1.0) · **Licence**: MIT OR Apache-2.0
+**Crate**: `tableski` · **Version**: 0.1.0 (on crates.io) · **Licence**: MIT OR Apache-2.0
 
 ## Scope
 
