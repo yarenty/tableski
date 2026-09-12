@@ -106,6 +106,11 @@ Honest positioning — different tools solve different problems:
 
 If you need to *edit* workbooks (styles, charts, cell writes), pair tableski with a writer-oriented server; tableski is the analysis and export engine.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md): run the checks, keep the docs in step, and sign off
+your commits (DCO, `git commit -s`).
+
 ## License
 
 Licensed under either of

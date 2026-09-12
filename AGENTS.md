@@ -20,7 +20,7 @@ Layout: `src/lib.rs` (handler + tools), `src/register.rs` (file -> table registr
 - **Transport is shared + stateless.** HTTP/SSE/stdio framing lives in `emperor-mcp` (crates.io dependency); don't reimplement it here. The server must stay stateless (no session id).
 - **Hostile input is the norm.** New ingest paths get a fixture in `fixtures/corpus/` and a test in `tests/excel_hardening.rs` or `tests/formats_export.rs`; export stays sandboxed to `--export-dir`.
 - **CLI flags are a public contract.** Existing `--file/--csv/--xlsx/--export-dir/--bind` behaviour must not change without a major version.
-- Licence is dual `MIT OR Apache-2.0` (`LICENSE-MIT`, `LICENSE-APACHE`); keep `Cargo.toml`, the README badge and the README licence section in agreement.
+- Licence is dual `MIT OR Apache-2.0` (`LICENSE-MIT`, `LICENSE-APACHE`); keep `Cargo.toml`, the README badge and the README licence section in agreement. Contributions are signed off (DCO, see `CONTRIBUTING.md`).
 
 ## Documentation closure (mandatory)
 
