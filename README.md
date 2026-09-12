@@ -1,5 +1,10 @@
 # tableski
 
+[![CI](https://github.com/yarenty/tableski/actions/workflows/ci.yml/badge.svg)](https://github.com/yarenty/tableski/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/tableski.svg)](https://crates.io/crates/tableski)
+[![docs.rs](https://docs.rs/tableski/badge.svg)](https://docs.rs/tableski)
+[![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+
 **Every spreadsheet is a table — tableski serves them to your agents in SQL.**
 
 Excel, CSV, Parquet, JSON — one penguin-family binary that turns your data files into
@@ -103,4 +108,12 @@ If you need to *edit* workbooks (styles, charts, cell writes), pair tableski wit
 
 ## License
 
-MIT
+Licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <https://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
+
+at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in
+tableski by you shall be dual licensed as above, without any additional terms or conditions.

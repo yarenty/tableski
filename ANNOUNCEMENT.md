@@ -37,7 +37,7 @@ your model, and exports sandboxed to an operator-chosen directory.
 
 `cargo install tableski`, or grab a binary for macOS/Linux/Windows from the releases page.
 One penguin-family binary — it hatched in the same rookery as
-[kowalski](https://github.com/yarenty/kowalski). MIT, on
+[kowalski](https://github.com/yarenty/kowalski). MIT or Apache-2.0, on
 [GitHub](https://github.com/yarenty/tableski) and [crates.io](https://crates.io/crates/tableski).
 
 ---
@@ -59,6 +59,6 @@ exactly when the question matters.
 Hardened for real workbooks: merged cells, cached formulas, #DIV/0!, ragged rows — every
 nasty trait has a fixture and a test.
 
-`cargo install tableski` · github.com/yarenty/tableski · MIT
+`cargo install tableski` · github.com/yarenty/tableski · MIT or Apache-2.0
 
 #rust #mcp #excel #sql #ai #datafusion #opensource
