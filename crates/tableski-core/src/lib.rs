@@ -25,6 +25,7 @@
 
 use datafusion::arrow::datatypes::Schema;
 use datafusion::arrow::util::pretty::pretty_format_batches;
+use datafusion::execution::context::SQLOptions;
 use datafusion::prelude::*;
 use emperor_mcp::{FrameKind, McpHandler, frame};
 use serde_json::{Value, json};
@@ -32,8 +33,10 @@ use std::sync::Arc;
 
 pub mod excel;
 pub mod export;
+pub mod guard;
 pub mod register;
 pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
+pub use guard::{Rejection, SqlTrust, check_untrusted};
 pub use register::register_path;
 
 /// `Accept` value clients should send (re-exported from the shared transport).
@@ -93,6 +96,8 @@ pub struct AppState {
     pub tables: Vec<TableEntry>,
     /// Directory result exports may write into; exports are disabled when `None`.
     pub export_dir: Option<std::path::PathBuf>,
+    /// Whether SQL from clients is checked by the [`guard`] before it runs.
+    pub sql_trust: SqlTrust,
 }
 
 impl AppState {
@@ -102,6 +107,32 @@ impl AppState {
             ctx,
             tables,
             export_dir: None,
+            sql_trust: SqlTrust::Trusted,
+        }
+    }
+
+    /// Treat clients as untrusted: only read-only queries over registered tables run
+    /// ([`check_untrusted`]), and DataFusion itself refuses DDL, DML and statements.
+    pub fn untrusted(mut self) -> Self {
+        self.sql_trust = SqlTrust::Untrusted;
+        self
+    }
+
+    /// Plan `sql` under this state's trust level. Every tool that takes SQL goes through here.
+    pub async fn sql(&self, sql: &str) -> Result<DataFrame, String> {
+        match self.sql_trust {
+            SqlTrust::Trusted => self.ctx.sql(sql).await.map_err(|e| e.to_string()),
+            SqlTrust::Untrusted => {
+                check_untrusted(sql, &self.table_names()).map_err(|e| e.to_string())?;
+                let options = SQLOptions::new()
+                    .with_allow_ddl(false)
+                    .with_allow_dml(false)
+                    .with_allow_statements(false);
+                self.ctx
+                    .sql_with_options(sql, options)
+                    .await
+                    .map_err(|e| e.to_string())
+            }
         }
     }
 
@@ -305,7 +336,7 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
             let sql = args["sql"]
                 .as_str()
                 .ok_or_else(|| "missing arguments.sql".to_string())?;
-            let df = state.ctx.sql(sql).await.map_err(|e| e.to_string())?;
+            let df = state.sql(sql).await?;
             let batches = df.collect().await.map_err(|e| e.to_string())?;
             let text = pretty_format_batches(&batches)
                 .map_err(|e| e.to_string())?
@@ -315,7 +346,7 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
         "get_schema" => {
             let table = state.resolve_table(&args)?;
             let sql = format!("SELECT * FROM {table} LIMIT 0");
-            let df = state.ctx.sql(&sql).await.map_err(|e| e.to_string())?;
+            let df = state.sql(&sql).await?;
             let j = schema_to_json(&table, df.schema().as_arrow());
             Ok(framed_text(
                 &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
@@ -331,7 +362,8 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
             let file = args["file"]
                 .as_str()
                 .ok_or_else(|| "missing arguments.file".to_string())?;
-            let summary = export::export_query(&state.ctx, sql, dir, file).await?;
+            let df = state.sql(sql).await?;
+            let summary = export::export_query(df, dir, file).await?;
             let j = serde_json::to_value(&summary).map_err(|e| e.to_string())?;
             Ok(framed_text(
                 &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
@@ -340,7 +372,7 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
         "column_statistics" => {
             let table = state.resolve_table(&args)?;
             let sql = format!("SELECT * FROM {table}");
-            let df = state.ctx.sql(&sql).await.map_err(|e| e.to_string())?;
+            let df = state.sql(&sql).await?;
             let desc = df.describe().await.map_err(|e| e.to_string())?;
             let batches = desc.collect().await.map_err(|e| e.to_string())?;
             let text = pretty_format_batches(&batches)

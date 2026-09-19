@@ -5,7 +5,7 @@ use datafusion::arrow::array::{Array, BooleanArray, Float64Array, Int64Array};
 use datafusion::arrow::datatypes::DataType;
 use datafusion::arrow::record_batch::RecordBatch;
 use datafusion::arrow::util::display::array_value_to_string;
-use datafusion::prelude::SessionContext;
+use datafusion::prelude::DataFrame;
 use rust_xlsxwriter::Workbook;
 use std::path::{Component, Path, PathBuf};
 
@@ -39,15 +39,13 @@ fn safe_target(export_dir: &Path, file: &str) -> Result<(PathBuf, String), Strin
     Ok((export_dir.join(rel), format))
 }
 
-/// Run `sql` and write the full result set to `file` under `export_dir`.
+/// Collect `df` and write the full result set to `file` under `export_dir`.
 pub async fn export_query(
-    ctx: &SessionContext,
-    sql: &str,
+    df: DataFrame,
     export_dir: &Path,
     file: &str,
 ) -> Result<ExportSummary, String> {
     let (target, format) = safe_target(export_dir, file)?;
-    let df = ctx.sql(sql).await.map_err(|e| e.to_string())?;
     let batches = df.collect().await.map_err(|e| e.to_string())?;
     let rows: usize = batches.iter().map(RecordBatch::num_rows).sum();
     let columns = batches.first().map_or(0, RecordBatch::num_columns);

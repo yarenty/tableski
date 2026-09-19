@@ -93,6 +93,23 @@ exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.co
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
 > NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
 
+### Serving clients you do not trust
+
+By default tableski runs whatever SQL DataFusion accepts, which is right for a local
+single-user setup. Add `--untrusted-sql` when the server is reachable by agents or people you
+do not control:
+
+```sh
+tableski --file sales.xlsx --untrusted-sql
+```
+
+Then only read-only queries run: `SELECT`, `WITH`, `VALUES`, `EXPLAIN`, one statement per
+request, over registered tables only. `CREATE`, `INSERT`, `UPDATE`, `DELETE`, `DROP`, `COPY`,
+`SET`, `CREATE EXTERNAL TABLE`, table functions (`read_csv(...)`, `range(...)`) and references
+to unregistered tables or file paths are rejected on the parsed statement, before anything
+executes, with an error that names the reason. DataFusion's own DDL/DML/statement switches
+are turned off as a second fence.
+
 ## Use as a library
 
 The engine is its own crate, [`tableski-core`](crates/tableski-core): register files into a

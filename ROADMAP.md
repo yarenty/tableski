@@ -24,8 +24,10 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
       export, `call_tool` for embedders) + `tableski` (CLI, root package). CLI flags identical;
       the existing tests passed untouched (#9, 2026-09-19).
 - [ ] `TableSource` trait so tables can come from something other than files on disk (#10).
-- [ ] Untrusted-SQL guard: reject DDL/DML, external tables and `read_*` table functions when
-      serving clients that are not trusted (opt-in flag) (#11).
+- [x] Untrusted-SQL guard (`--untrusted-sql`, `AppState::untrusted()`): one read-only query per
+      request over registered tables; DDL/DML/COPY/SET, external tables, table functions and
+      unregistered table references rejected on the AST, DataFusion `SQLOptions` as a second
+      fence (#11, 2026-09-19).
 - [ ] Per-query limits: memory pool cap, wall-clock timeout, result row/byte cap (#12).
 - [ ] Hostile-SQL test suite (DDL, external table, cartesian blow-up, huge result) (#13).
 - [ ] Document performance expectations for large files (what is streamed, what is loaded) (#14).

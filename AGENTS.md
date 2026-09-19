@@ -20,6 +20,7 @@ Layout (cargo workspace, #9): the root package is the **CLI** `tableski` (`src/m
 - **Transport is shared + stateless.** HTTP/SSE/stdio framing lives in `emperor-mcp` (crates.io dependency); don't reimplement it here. The server must stay stateless (no session id).
 - **Hostile input is the norm.** New ingest paths get a fixture in `fixtures/corpus/` and a test in `tests/excel_hardening.rs` or `tests/formats_export.rs`; export stays sandboxed to `--export-dir`.
 - **Engine vs CLI.** Anything a third crate could want (ingest, tools, limits, guards) goes into `tableski-core`; the root crate only wires transport and flags. Core must not grow a dependency on axum, tokio's runtime, or clap outside the `clap` feature.
+- **Untrusted SQL goes through `guard.rs`.** `AppState::sql` is the only way tools plan SQL; in `SqlTrust::Untrusted` it runs `check_untrusted` (AST decision: one statement, query-only, no table functions, registered tables or CTEs only) and then DataFusion `SQLOptions` with DDL/DML/statements off. New tools that take SQL call `state.sql`, never `ctx.sql`. Decisions are tested on parsed statements in `crates/tableski-core/tests/sql_guard.rs`; extend that file, not string checks.
 - **CLI flags are a public contract.** Existing `--file/--csv/--xlsx/--export-dir/--bind` behaviour must not change without a major version.
 - Licence is dual `MIT OR Apache-2.0` (`LICENSE-MIT`, `LICENSE-APACHE`); keep `Cargo.toml`, the README badge and the README licence section in agreement. Contributions are signed off (DCO, see `CONTRIBUTING.md`).
 

@@ -39,6 +39,10 @@ struct Args {
     /// Enable the export_result tool, sandboxed to this directory.
     #[arg(long)]
     export_dir: Option<PathBuf>,
+    /// Treat clients as untrusted: only read-only queries (SELECT / WITH / EXPLAIN) over the
+    /// registered tables run; DDL, DML, COPY, SET and table functions are rejected.
+    #[arg(long)]
+    untrusted_sql: bool,
 }
 
 #[tokio::main]
@@ -101,6 +105,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::fs::create_dir_all(dir)?;
         eprintln!("tableski: export_result enabled -> {}", dir.display());
         state = state.with_export_dir(dir);
+    }
+    if args.untrusted_sql {
+        eprintln!("tableski: --untrusted-sql: read-only queries over registered tables only");
+        state = state.untrusted();
     }
     let app = app_router(state);
     let addr: SocketAddr = args.bind.parse()?;
