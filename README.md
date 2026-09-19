@@ -110,6 +110,21 @@ to unregistered tables or file paths are rejected on the parsed statement, befor
 executes, with an error that names the reason. DataFusion's own DDL/DML/statement switches
 are turned off as a second fence.
 
+### Limits
+
+One query cannot take the machine down. Defaults, each `0` = unlimited:
+
+| Flag | Default | What it bounds |
+|---|---|---|
+| `--max-memory-mb` | 2048 | DataFusion memory pool for the session; a query needing more fails with `Resources exhausted` instead of growing the process. With a cap set, spilling to disk is off, so it fails fast rather than filling the disk. |
+| `--query-timeout-secs` | 60 | Wall clock per query, planning included. The query runs on a dedicated thread pool and is cancelled at DataFusion's next yield point; the server keeps answering meanwhile. |
+| `--max-result-rows` | 10000 | Rows a `query_sql` result carries back. Beyond it the result is cut and ends with a `-- result truncated ...` line; `export_result` refuses instead of writing a partial file. |
+| `--max-result-mb` | 16 | Same, by Arrow in-memory size. |
+
+Cartesian products (`CROSS JOIN`, or a join without an `=` condition) are the one shape a
+timeout cannot stop once running, so `--untrusted-sql` refuses them on the plan before
+execution.
+
 ## Use as a library
 
 The engine is its own crate, [`tableski-core`](crates/tableski-core): register files into a

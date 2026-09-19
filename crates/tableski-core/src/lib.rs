@@ -34,9 +34,11 @@ use std::sync::Arc;
 pub mod excel;
 pub mod export;
 pub mod guard;
+pub mod limits;
 pub mod register;
 pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
-pub use guard::{Rejection, SqlTrust, check_untrusted};
+pub use guard::{Rejection, SqlTrust, check_plan, check_untrusted};
+pub use limits::{Collected, QueryLimits, collect_limited, query_runtime};
 pub use register::register_path;
 
 /// `Accept` value clients should send (re-exported from the shared transport).
@@ -98,6 +100,9 @@ pub struct AppState {
     pub export_dir: Option<std::path::PathBuf>,
     /// Whether SQL from clients is checked by the [`guard`] before it runs.
     pub sql_trust: SqlTrust,
+    /// Timeout and result caps applied to every query ([`QueryLimits::unlimited`] by default;
+    /// the memory cap lives on the session, see [`QueryLimits::session_context`]).
+    pub limits: QueryLimits,
 }
 
 impl AppState {
@@ -108,7 +113,19 @@ impl AppState {
             tables,
             export_dir: None,
             sql_trust: SqlTrust::Trusted,
+            limits: QueryLimits::unlimited(),
         }
+    }
+
+    /// Apply `limits` (timeout, row and byte caps) to every query of this state.
+    pub fn with_limits(mut self, limits: QueryLimits) -> Self {
+        self.limits = limits;
+        self
+    }
+
+    /// Run a planned query under this state's limits. Every tool that returns rows goes through here.
+    pub async fn collect(&self, df: DataFrame) -> Result<Collected, String> {
+        collect_limited(df, &self.limits).await
     }
 
     /// Treat clients as untrusted: only read-only queries over registered tables run
@@ -128,10 +145,18 @@ impl AppState {
                     .with_allow_ddl(false)
                     .with_allow_dml(false)
                     .with_allow_statements(false);
-                self.ctx
+                let df = self
+                    .ctx
                     .sql_with_options(sql, options)
                     .await
-                    .map_err(|e| e.to_string())
+                    .map_err(|e| e.to_string())?;
+                let plan = df
+                    .clone()
+                    .create_physical_plan()
+                    .await
+                    .map_err(|e| e.to_string())?;
+                guard::check_plan(&plan).map_err(|e| e.to_string())?;
+                Ok(df)
             }
         }
     }
@@ -337,10 +362,14 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
                 .as_str()
                 .ok_or_else(|| "missing arguments.sql".to_string())?;
             let df = state.sql(sql).await?;
-            let batches = df.collect().await.map_err(|e| e.to_string())?;
-            let text = pretty_format_batches(&batches)
+            let collected = state.collect(df).await?;
+            let mut text = pretty_format_batches(&collected.batches)
                 .map_err(|e| e.to_string())?
                 .to_string();
+            if let Some(note) = collected.truncation_note(&state.limits) {
+                text.push('\n');
+                text.push_str(&note);
+            }
             Ok(framed_text(&text))
         }
         "get_schema" => {
@@ -363,7 +392,14 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
                 .as_str()
                 .ok_or_else(|| "missing arguments.file".to_string())?;
             let df = state.sql(sql).await?;
-            let summary = export::export_query(df, dir, file).await?;
+            let collected = state.collect(df).await?;
+            if collected.truncated {
+                return Err(format!(
+                    "export refused: the result exceeds the configured cap ({} rows collected); narrow the query or raise --max-result-rows / --max-result-mb",
+                    collected.rows
+                ));
+            }
+            let summary = export::export_query(collected.batches, dir, file).await?;
             let j = serde_json::to_value(&summary).map_err(|e| e.to_string())?;
             Ok(framed_text(
                 &serde_json::to_string_pretty(&j).unwrap_or_else(|_| j.to_string()),
@@ -374,8 +410,8 @@ async fn run_tool_call(state: &AppState, body: &Value) -> Result<Value, String> 
             let sql = format!("SELECT * FROM {table}");
             let df = state.sql(&sql).await?;
             let desc = df.describe().await.map_err(|e| e.to_string())?;
-            let batches = desc.collect().await.map_err(|e| e.to_string())?;
-            let text = pretty_format_batches(&batches)
+            let collected = state.collect(desc).await?;
+            let text = pretty_format_batches(&collected.batches)
                 .map_err(|e| e.to_string())?
                 .to_string();
             Ok(framed_text(&text))

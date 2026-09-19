@@ -4,8 +4,8 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tableski::{
-    ACCEPT_STREAMABLE, AppState, HeaderMode, IngestOptions, TableEntry, app_router, register_path,
-    register_workbook,
+    ACCEPT_STREAMABLE, AppState, HeaderMode, IngestOptions, QueryLimits, TableEntry, app_router,
+    register_path, register_workbook,
 };
 
 #[derive(Parser, Debug)]
@@ -43,6 +43,31 @@ struct Args {
     /// registered tables run; DDL, DML, COPY, SET and table functions are rejected.
     #[arg(long)]
     untrusted_sql: bool,
+    /// Memory pool for the whole session in MiB; a query that needs more fails instead of
+    /// growing the process. 0 = unlimited (and spilling to disk allowed again).
+    #[arg(long, default_value_t = 2048)]
+    max_memory_mb: u64,
+    /// Wall-clock budget per query in seconds. 0 = unlimited.
+    #[arg(long, default_value_t = 60)]
+    query_timeout_secs: u64,
+    /// Most rows a query_sql result may carry back; the rest is cut and the result says so.
+    /// 0 = unlimited.
+    #[arg(long, default_value_t = 10_000)]
+    max_result_rows: usize,
+    /// Most MiB (Arrow in-memory size) a result may carry back. 0 = unlimited.
+    #[arg(long, default_value_t = 16)]
+    max_result_mb: usize,
+}
+
+fn limits_from(args: &Args) -> QueryLimits {
+    let nonzero = |v: usize| (v > 0).then_some(v);
+    QueryLimits {
+        memory_bytes: nonzero(args.max_memory_mb as usize).map(|mb| mb * 1024 * 1024),
+        timeout: (args.query_timeout_secs > 0)
+            .then(|| std::time::Duration::from_secs(args.query_timeout_secs)),
+        max_rows: nonzero(args.max_result_rows),
+        max_bytes: nonzero(args.max_result_mb).map(|mb| mb * 1024 * 1024),
+    }
 }
 
 #[tokio::main]
@@ -52,7 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("nothing to serve: pass --file <data-file> (or --csv/--xlsx)".into());
     }
 
-    let ctx = SessionContext::new();
+    let limits = limits_from(&args);
+    let ctx = limits.session_context()?;
     let mut tables = Vec::new();
 
     if let Some(csv) = &args.csv {
@@ -100,7 +126,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let mut state = AppState::new(Arc::new(ctx), tables);
+    let mut state = AppState::new(Arc::new(ctx), tables).with_limits(limits);
+    eprintln!(
+        "tableski: limits: memory {} MiB, timeout {} s, result {} rows / {} MiB (0 = unlimited)",
+        args.max_memory_mb, args.query_timeout_secs, args.max_result_rows, args.max_result_mb
+    );
     if let Some(dir) = &args.export_dir {
         std::fs::create_dir_all(dir)?;
         eprintln!("tableski: export_result enabled -> {}", dir.display());

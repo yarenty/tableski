@@ -203,6 +203,25 @@ async fn untrusted_state_rejects_before_execution_and_still_serves_queries() {
 }
 
 #[tokio::test]
+async fn untrusted_state_refuses_cartesian_products_on_the_plan() {
+    let s = state(true).await;
+    for sql in [
+        "SELECT count(*) FROM sample a CROSS JOIN sample b",
+        "SELECT count(*) FROM sample a, sample b WHERE a.name <> b.name",
+        "SELECT count(*) FROM sample a JOIN sample b ON a.name <> b.name",
+    ] {
+        let err = call_tool(&s, "query_sql", serde_json::json!({ "sql": sql }))
+            .await
+            .unwrap_err();
+        assert!(err.contains("cartesian product"), "{sql}: {err}");
+    }
+    // An equi-join is fine.
+    call_tool(&s, "query_sql", serde_json::json!({ "sql": "SELECT count(*) FROM sample a JOIN sample b ON a.name = b.name" }))
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn trusted_state_is_unchanged() {
     let s = state(false).await;
     call_tool(

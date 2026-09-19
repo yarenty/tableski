@@ -9,12 +9,15 @@
 //!
 //! [`SQLOptions`]: datafusion::execution::context::SQLOptions
 
+use datafusion::physical_plan::ExecutionPlan;
+use datafusion::physical_plan::joins::{CrossJoinExec, NestedLoopJoinExec};
 use datafusion::sql::parser::{DFParser, Statement as DfStatement};
 use datafusion::sql::sqlparser::ast::{
     ObjectName, ObjectNamePart, Query, Statement, TableFactor, Visit, Visitor,
 };
 use std::fmt;
 use std::ops::ControlFlow;
+use std::sync::Arc;
 
 /// How much the server trusts the client sending SQL.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -41,6 +44,9 @@ pub enum Rejection {
     TableFunction(String),
     /// A table reference that is neither registered nor a CTE of the same query.
     UnknownTable(String),
+    /// The plan contains a cartesian product (cross join, or a join without an equality
+    /// condition), which cannot be bounded by time once it runs.
+    CartesianJoin,
 }
 
 impl fmt::Display for Rejection {
@@ -65,6 +71,10 @@ impl fmt::Display for Rejection {
             Self::UnknownTable(name) => write!(
                 f,
                 "rejected: `{name}` is not a registered table (see list_tables)"
+            ),
+            Self::CartesianJoin => write!(
+                f,
+                "rejected: cartesian product (cross join, or a join without an equality condition) is not allowed for untrusted clients; join on a column with `=`"
             ),
         }
     }
@@ -184,4 +194,15 @@ impl Visitor for TableVisitor<'_> {
             _ => ControlFlow::Continue(()),
         }
     }
+}
+
+/// Second decision, on the physical plan: refuse cartesian products. A cross join or a
+/// nested-loop join over registered tables is the one query shape a wall-clock limit cannot
+/// stop once it runs (DataFusion yields too rarely inside it), so it never starts.
+pub fn check_plan(plan: &Arc<dyn ExecutionPlan>) -> Result<(), Rejection> {
+    let any: &dyn std::any::Any = plan.as_ref();
+    if any.is::<CrossJoinExec>() || any.is::<NestedLoopJoinExec>() {
+        return Err(Rejection::CartesianJoin);
+    }
+    plan.children().into_iter().try_for_each(check_plan)
 }

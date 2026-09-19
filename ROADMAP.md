@@ -28,7 +28,10 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
       request over registered tables; DDL/DML/COPY/SET, external tables, table functions and
       unregistered table references rejected on the AST, DataFusion `SQLOptions` as a second
       fence (#11, 2026-09-19).
-- [ ] Per-query limits: memory pool cap, wall-clock timeout, result row/byte cap (#12).
+- [x] Per-query limits: memory pool cap (`--max-memory-mb`, spill off), wall-clock timeout on a
+      dedicated query runtime (`--query-timeout-secs`), result row/byte caps with a truncation
+      note (`--max-result-rows`, `--max-result-mb`); safe defaults, `0` = unlimited; cartesian
+      products refused on the plan in untrusted mode (#12, 2026-09-19).
 - [ ] Hostile-SQL test suite (DDL, external table, cartesian blow-up, huge result) (#13).
 - [ ] Document performance expectations for large files (what is streamed, what is loaded) (#14).
 - [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release (#8).
