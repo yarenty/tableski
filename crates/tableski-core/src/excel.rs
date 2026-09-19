@@ -19,7 +19,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 /// How the first row of each sheet is interpreted.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 pub enum HeaderMode {
     /// First row becomes column names when every cell is a distinct non-empty string;
     /// otherwise synthetic `col_1..col_N` names are used.
@@ -34,9 +35,13 @@ pub enum HeaderMode {
 /// One registered sheet: table name, source sheet name, and data dimensions.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct SheetInfo {
+    /// SQL table name the sheet was registered under.
     pub table: String,
+    /// Sheet name inside the workbook.
     pub sheet: String,
+    /// Data rows (header row excluded).
     pub rows: usize,
+    /// Number of columns.
     pub columns: usize,
 }
 

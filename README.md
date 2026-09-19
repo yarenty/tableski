@@ -93,6 +93,23 @@ exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.co
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
 > NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
 
+## Use as a library
+
+The engine is its own crate, [`tableski-core`](crates/tableski-core): register files into a
+DataFusion `SessionContext`, then run the tools with `call_tool` or serve `AppState` through
+any [emperor-mcp](https://github.com/yarenty/emperor-mcp) transport. No HTTP, no CLI.
+
+```toml
+[dependencies]
+tableski-core = "0.1"
+```
+
+```rust,ignore
+let tables = register_path(&ctx, "orders.xlsx".as_ref(), &IngestOptions::default()).await?;
+let state = AppState::new(Arc::new(ctx), tables);
+let grid = call_tool(&state, "query_sql", json!({ "sql": "SELECT count(*) FROM orders" })).await?;
+```
+
 ## How it compares
 
 Honest positioning — different tools solve different problems:

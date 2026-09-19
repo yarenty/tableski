@@ -6,12 +6,12 @@
 
 This crate is a **standalone MCP HTTP server** (extracted from the [kowalski](https://github.com/yarenty/kowalski) workspace in Aug 2026). It implements the DataFusion tool dispatch as an `McpHandler` and serves it over the [`emperor-mcp`](https://github.com/yarenty/emperor-mcp) framework as **stateless Streamable HTTP** (JSON/SSE, **no `Mcp-Session-Id`**), consistent with `kowalski-core`'s MCP client.
 
-Layout: `src/lib.rs` (handler + tools), `src/register.rs` (file -> table registration), `src/excel.rs` (workbook ingester), `src/export.rs` (sandboxed result export), `src/main.rs` (CLI). Tests in `tests/` (golden, hardening, formats/export, HTTP smoke) with the fixture corpus in `fixtures/`.
+Layout (cargo workspace, #9): the root package is the **CLI** `tableski` (`src/main.rs`; `src/lib.rs` = `app_router` + re-export of the core), the engine is **`crates/tableski-core`** (`lib.rs` handler + tools + `call_tool`, `register.rs` file -> table registration, `excel.rs` workbook ingester, `export.rs` sandboxed result export; `#![warn(missing_docs)]`, no transport, clap only behind the `clap` feature). Integration tests stay at the root in `tests/` (golden, hardening, formats/export, HTTP smoke) with the fixture corpus in `fixtures/`; the embedding contract is `crates/tableski-core/tests/library.rs`. `cargo test --workspace` runs everything; plain `cargo test` only the CLI package.
 
 ## Before you change code
 
-1. Read [`src/lib.rs`](./src/lib.rs) for the MCP request/response flow and tool handlers.
-2. Run **`cargo test`** (includes HTTP smoke tests) and **`cargo deny check`** (licences + advisories, config in `deny.toml`).
+1. Read [`crates/tableski-core/src/lib.rs`](./crates/tableski-core/src/lib.rs) for the MCP request/response flow and tool handlers.
+2. Run **`cargo test --workspace`** (includes HTTP smoke tests), **`cargo clippy --workspace --all-targets -- -D warnings`**, **`cargo doc -p tableski-core --no-deps`** (must stay warning-free) and **`cargo deny check`** (licences + advisories, config in `deny.toml`).
 3. If changing the Docker image, rebuild with **`docker compose build`** (build context = repo root, `Dockerfile` copies the whole crate).
 
 ## Conventions
@@ -19,6 +19,7 @@ Layout: `src/lib.rs` (handler + tools), `src/register.rs` (file -> table registr
 - Prefer small, testable pure functions for SQL/schema helpers; keep the `McpHandler` dispatch thin.
 - **Transport is shared + stateless.** HTTP/SSE/stdio framing lives in `emperor-mcp` (crates.io dependency); don't reimplement it here. The server must stay stateless (no session id).
 - **Hostile input is the norm.** New ingest paths get a fixture in `fixtures/corpus/` and a test in `tests/excel_hardening.rs` or `tests/formats_export.rs`; export stays sandboxed to `--export-dir`.
+- **Engine vs CLI.** Anything a third crate could want (ingest, tools, limits, guards) goes into `tableski-core`; the root crate only wires transport and flags. Core must not grow a dependency on axum, tokio's runtime, or clap outside the `clap` feature.
 - **CLI flags are a public contract.** Existing `--file/--csv/--xlsx/--export-dir/--bind` behaviour must not change without a major version.
 - Licence is dual `MIT OR Apache-2.0` (`LICENSE-MIT`, `LICENSE-APACHE`); keep `Cargo.toml`, the README badge and the README licence section in agreement. Contributions are signed off (DCO, see `CONTRIBUTING.md`).
 

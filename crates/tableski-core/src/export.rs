@@ -12,9 +12,13 @@ use std::path::{Component, Path, PathBuf};
 /// What a successful export produced.
 #[derive(Debug, serde::Serialize)]
 pub struct ExportSummary {
+    /// Absolute path of the written file, inside the export directory.
     pub path: String,
+    /// `csv` or `xlsx`.
     pub format: String,
+    /// Rows written (header excluded).
     pub rows: usize,
+    /// Columns written.
     pub columns: usize,
 }
 

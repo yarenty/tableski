@@ -20,8 +20,9 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
 
 ## 1.0 — stable engine (#8)
 
-- [ ] Split into a cargo workspace: `tableski-core` (ingest, registration, tools, framing,
-      export) + `tableski` (CLI). CLI flags stay identical; existing tests are the regression fence (#9).
+- [x] Split into a cargo workspace: `tableski-core` (ingest, registration, tools, framing,
+      export, `call_tool` for embedders) + `tableski` (CLI, root package). CLI flags identical;
+      the existing tests passed untouched (#9, 2026-09-19).
 - [ ] `TableSource` trait so tables can come from something other than files on disk (#10).
 - [ ] Untrusted-SQL guard: reject DDL/DML, external tables and `read_*` table functions when
       serving clients that are not trusted (opt-in flag) (#11).

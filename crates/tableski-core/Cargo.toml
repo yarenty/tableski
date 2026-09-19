@@ -1,0 +1,33 @@
+[package]
+name = "tableski-core"
+description = "The tableski engine: DataFusion tables over Excel, CSV, Parquet and NDJSON files, with the MCP tool dispatch — no transport, embed it anywhere"
+readme = "README.md"
+keywords = ["mcp", "sql", "excel", "spreadsheet", "datafusion"]
+categories = ["database-implementations", "parser-implementations"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+emperor-mcp.workspace = true
+datafusion.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rust_xlsxwriter.workspace = true
+calamine.workspace = true
+chrono.workspace = true
+clap = { workspace = true, optional = true }
+
+[features]
+## `clap::ValueEnum` on `HeaderMode`, for CLIs that expose `--headers`.
+clap = ["dep:clap"]
+
+[dev-dependencies]
+tokio.workspace = true
