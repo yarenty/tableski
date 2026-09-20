@@ -38,7 +38,7 @@ pub mod limits;
 pub mod register;
 pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
 pub use guard::{Rejection, SqlTrust, check_plan, check_untrusted};
-pub use limits::{Collected, QueryLimits, collect_limited, query_runtime};
+pub use limits::{Collected, QueryLimits, collect_limited, query_runtime, run_bounded};
 pub use register::register_path;
 
 /// `Accept` value clients should send (re-exported from the shared transport).
@@ -135,28 +135,45 @@ impl AppState {
         self
     }
 
-    /// Plan `sql` under this state's trust level. Every tool that takes SQL goes through here.
+    /// Plan `sql` under this state's trust level and timeout. Every tool that takes SQL goes
+    /// through here. Planning runs on the query runtime like execution: the optimizer folds
+    /// constants (`repeat('x', 10^9)`) and that work must not block the server either.
     pub async fn sql(&self, sql: &str) -> Result<DataFrame, String> {
+        let ctx = Arc::clone(&self.ctx);
+        let sql = sql.to_string();
         match self.sql_trust {
-            SqlTrust::Trusted => self.ctx.sql(sql).await.map_err(|e| e.to_string()),
+            SqlTrust::Trusted => {
+                limits::run_bounded(
+                    async move { ctx.sql(&sql).await.map_err(|e| e.to_string()) },
+                    self.limits.timeout,
+                    "planning",
+                )
+                .await
+            }
             SqlTrust::Untrusted => {
-                check_untrusted(sql, &self.table_names()).map_err(|e| e.to_string())?;
+                check_untrusted(&sql, &self.table_names()).map_err(|e| e.to_string())?;
                 let options = SQLOptions::new()
                     .with_allow_ddl(false)
                     .with_allow_dml(false)
                     .with_allow_statements(false);
-                let df = self
-                    .ctx
-                    .sql_with_options(sql, options)
-                    .await
-                    .map_err(|e| e.to_string())?;
-                let plan = df
-                    .clone()
-                    .create_physical_plan()
-                    .await
-                    .map_err(|e| e.to_string())?;
-                guard::check_plan(&plan).map_err(|e| e.to_string())?;
-                Ok(df)
+                limits::run_bounded(
+                    async move {
+                        let df = ctx
+                            .sql_with_options(&sql, options)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                        let plan = df
+                            .clone()
+                            .create_physical_plan()
+                            .await
+                            .map_err(|e| e.to_string())?;
+                        guard::check_plan(&plan).map_err(|e| e.to_string())?;
+                        Ok(df)
+                    },
+                    self.limits.timeout,
+                    "planning",
+                )
+                .await
             }
         }
     }

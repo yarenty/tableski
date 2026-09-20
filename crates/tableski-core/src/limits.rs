@@ -7,6 +7,7 @@ use datafusion::execution::disk_manager::{DiskManagerBuilder, DiskManagerMode};
 use datafusion::execution::runtime_env::RuntimeEnvBuilder;
 use datafusion::prelude::{DataFrame, SessionConfig, SessionContext};
 use futures::StreamExt;
+use std::future::Future;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
@@ -116,36 +117,47 @@ impl Collected {
     }
 }
 
+/// Run `work` under `timeout` on the [`query_runtime`]: the caller's runtime (HTTP, timers)
+/// stays responsive however busy the work is, and on expiry the task is aborted (it stops at
+/// its next yield point). Without a timeout, `work` runs inline.
+pub async fn run_bounded<T, F>(work: F, timeout: Option<Duration>, what: &str) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: Future<Output = Result<T, String>> + Send + 'static,
+{
+    let Some(budget) = timeout else {
+        return work.await;
+    };
+    let started = Instant::now();
+    let mut task = query_runtime().spawn(work);
+    match tokio::time::timeout(budget, &mut task).await {
+        Ok(joined) => joined.map_err(|e| format!("{what} task failed: {e}"))?,
+        Err(_) => {
+            task.abort();
+            Err(format!(
+                "{what} cancelled after {:.1}s (wall-clock limit {:.0}s; narrow the query or raise --query-timeout-secs)",
+                started.elapsed().as_secs_f64(),
+                budget.as_secs_f64()
+            ))
+        }
+    }
+}
+
 /// Execute `df` as a stream, stop at the row/byte caps, and give up at the timeout.
 ///
 /// Stopping early means a runaway `SELECT *` never materialises past the cap. With a timeout
-/// the query runs on [`query_runtime`] and is aborted on expiry; the caller's runtime and the
+/// the query runs on [`query_runtime`] via [`run_bounded`]; the caller's runtime and the
 /// session stay usable. A plan that never yields keeps its query thread busy until it does
 /// (see [`check_plan`](crate::guard::check_plan) for why cartesian products are refused).
 pub async fn collect_limited(df: DataFrame, limits: &QueryLimits) -> Result<Collected, String> {
-    let started = Instant::now();
-    let result = match limits.timeout {
-        Some(budget) => {
-            // The query runs on the dedicated query runtime, so the caller's runtime (HTTP,
-            // this timer) stays responsive however busy DataFusion is. On expiry the task is
-            // aborted and stops at DataFusion's next cooperative yield point.
-            let mut task =
-                query_runtime().spawn(collect_capped(df, limits.max_rows, limits.max_bytes));
-            match tokio::time::timeout(budget, &mut task).await {
-                Ok(joined) => joined.map_err(|e| format!("query task failed: {e}"))?,
-                Err(_) => {
-                    task.abort();
-                    return Err(format!(
-                        "query cancelled after {:.1}s (wall-clock limit {:.0}s; narrow the query or raise --query-timeout-secs)",
-                        started.elapsed().as_secs_f64(),
-                        budget.as_secs_f64()
-                    ));
-                }
-            }
-        }
-        None => collect_capped(df, limits.max_rows, limits.max_bytes).await,
-    };
-    result.map_err(|e| {
+    let (max_rows, max_bytes) = (limits.max_rows, limits.max_bytes);
+    run_bounded(
+        collect_capped(df, max_rows, max_bytes),
+        limits.timeout,
+        "query",
+    )
+    .await
+    .map_err(|e| {
         if e.contains("Resources exhausted") {
             format!("{e} (memory pool limit; narrow the query or raise --max-memory-mb)")
         } else {

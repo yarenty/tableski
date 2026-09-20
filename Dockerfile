@@ -1,6 +1,6 @@
 # Build:  docker build -t tableski .
 # Run:    docker run --rm -p 8080:8080 tableski
-FROM rust:1.85 AS builder
+FROM rust:1.98 AS builder
 WORKDIR /app
 COPY . .
 RUN cargo build --release

@@ -125,6 +125,13 @@ Cartesian products (`CROSS JOIN`, or a join without an `=` condition) are the on
 timeout cannot stop once running, so `--untrusted-sql` refuses them on the plan before
 execution.
 
+The timeout covers planning as well as execution, so a statement that is expensive merely to
+optimise is cut too. What the pool does not meter: memory allocated by scalar functions
+(`repeat`, `lpad`, ...). Run a server for untrusted clients under a container memory limit,
+as the tableski.io deployment does. The whole set is exercised by `tests/hostile_sql.rs`
+(DDL/DML, filesystem reach, identifier tricks, blow-ups, parser stress, export traversal); add
+a line there when you find a new bad shape.
+
 ## Use as a library
 
 The engine is its own crate, [`tableski-core`](crates/tableski-core): register files into a

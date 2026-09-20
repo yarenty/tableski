@@ -32,7 +32,10 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
       dedicated query runtime (`--query-timeout-secs`), result row/byte caps with a truncation
       note (`--max-result-rows`, `--max-result-mb`); safe defaults, `0` = unlimited; cartesian
       products refused on the plan in untrusted mode (#12, 2026-09-19).
-- [ ] Hostile-SQL test suite (DDL, external table, cartesian blow-up, huge result) (#13).
+- [x] Hostile-SQL test suite `tests/hostile_sql.rs`: 47 data-driven statements (DDL/DML,
+      filesystem and catalog reach, identifier tricks, cartesian and join blow-ups, huge result /
+      sort / string, recursive CTE, parser stress) + 9 export path cases, each bounded within
+      10 s, server answers after each; runs in ~11 s (#13, 2026-09-19).
 - [ ] Document performance expectations for large files (what is streamed, what is loaded) (#14).
 - [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release (#8).
 
