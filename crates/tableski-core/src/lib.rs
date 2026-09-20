@@ -35,11 +35,13 @@ pub mod excel;
 pub mod export;
 pub mod guard;
 pub mod limits;
+pub mod quota;
 pub mod register;
 pub mod source;
 pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
 pub use guard::{Rejection, SqlTrust, check_plan, check_untrusted};
 pub use limits::{Collected, QueryLimits, collect_limited, query_runtime, run_bounded};
+pub use quota::{Quota, QuotaExceeded, Usage, UsageMeter};
 pub use register::register_path;
 pub use source::{FileSource, TableSource, register_sources};
 
@@ -105,6 +107,8 @@ pub struct AppState {
     /// Timeout and result caps applied to every query ([`QueryLimits::unlimited`] by default;
     /// the memory cap lives on the session, see [`QueryLimits::session_context`]).
     pub limits: QueryLimits,
+    /// Daily query allowance and its meter; `None` = not metered (the default).
+    pub quota: Option<(Quota, Arc<UsageMeter>)>,
 }
 
 impl AppState {
@@ -116,7 +120,15 @@ impl AppState {
             export_dir: None,
             sql_trust: SqlTrust::Trusted,
             limits: QueryLimits::unlimited(),
+            quota: None,
         }
+    }
+
+    /// Meter this state's SQL-planning tool calls against `quota.queries_per_day`. The meter
+    /// is shared so several states (or a rebuilt one) can count for the same tenant.
+    pub fn with_quota(mut self, quota: Quota, meter: Arc<UsageMeter>) -> Self {
+        self.quota = Some((quota, meter));
+        self
     }
 
     /// Apply `limits` (timeout, row and byte caps) to every query of this state.
@@ -141,6 +153,9 @@ impl AppState {
     /// through here. Planning runs on the query runtime like execution: the optimizer folds
     /// constants (`repeat('x', 10^9)`) and that work must not block the server either.
     pub async fn sql(&self, sql: &str) -> Result<DataFrame, String> {
+        if let Some((quota, meter)) = &self.quota {
+            meter.consume_query(quota).map_err(|e| e.to_string())?;
+        }
         let ctx = Arc::clone(&self.ctx);
         let sql = sql.to_string();
         match self.sql_trust {

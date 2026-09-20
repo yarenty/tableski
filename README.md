@@ -156,6 +156,10 @@ same trait and keeps its state behind its own DataFusion `TableProvider`, so eve
 the rows that exist when it is planned. The module docs of `tableski_core::source` spell out
 the contract; `crates/tableski-core/tests/table_source.rs` is a worked appending source.
 
+For a server with tenants, `Quota` and `UsageMeter` (queries per day, bytes stored, files,
+rows per file) plug into the same state with `with_quota`; the meter is in memory, persisting
+usage is the host's job.
+
 ## How it compares
 
 Honest positioning — different tools solve different problems:

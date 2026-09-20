@@ -39,6 +39,9 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
       filesystem and catalog reach, identifier tricks, cartesian and join blow-ups, huge result /
       sort / string, recursive CTE, parser stress) + 9 export path cases, each bounded within
       10 s, server answers after each; runs in ~11 s (#13, 2026-09-19).
+- [x] Quota primitives (`quota.rs`): `Quota` (queries/day, bytes stored, files, bytes and rows per
+      file), `UsageMeter` with day rollover and storage reservation, `AppState::with_quota` counting
+      every SQL-planning tool call; plain types so a host can persist usage (2026-09-20).
 - [ ] Document performance expectations for large files (what is streamed, what is loaded) (#14).
 - [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release (#8).
 
