@@ -9,41 +9,41 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
 ## Done (0.1.0, Aug 2026)
 
 - [x] Standalone crate on [emperor-mcp](https://github.com/yarenty/emperor-mcp); stateless
-      Streamable HTTP, framed output, no session affinity (#1).
-- [x] Excel ingestion: xlsx/xls/ods, one table per sheet, typed columns, header detection (#2).
+      Streamable HTTP, framed output, no session affinity.
+- [x] Excel ingestion: xlsx/xls/ods, one table per sheet, typed columns, header detection.
 - [x] Real-world hardening: 1904 dates, cached formula values, error cells as NULL, merged
-      cells, ragged rows, unicode sheet names, `--max-rows` cap; committed fixture corpus (#3).
+      cells, ragged rows, unicode sheet names, `--max-rows` cap; committed fixture corpus.
 - [x] Format breadth: `--file` registers csv/parquet/json/ndjson/jsonl by extension; cross-format
-      joins; `export_result` tool (csv/xlsx) sandboxed to `--export-dir` (#4).
+      joins; `export_result` tool (csv/xlsx) sandboxed to `--export-dir`.
 - [x] Distribution: release workflow (4 targets), `install.sh`, MCP client config snippets,
-      vhs demo (#5). Launch kit: README, announcement drafts, landing page (#6).
+      vhs demo. Launch kit: README, announcement drafts, landing page.
 
-## 1.0 — stable engine (#8)
+## 1.0 — stable engine
 
 - [x] Split into a cargo workspace: `tableski-core` (ingest, registration, tools, framing,
       export, `call_tool` for embedders) + `tableski` (CLI, root package). CLI flags identical;
-      the existing tests passed untouched (#9, 2026-09-19).
+      the existing tests passed untouched (2026-09-19).
 - [x] `TableSource` trait (`source.rs`): `FileSource` for `--file`/`--csv`/`--xlsx` (CLI now
       builds one and calls `register_sources`), design note for refreshing/streaming sources and
       per-tenant registries in the module docs, test-only appending source proves the second
-      query sees rows a feed pushed in between (#10, 2026-09-20).
+      query sees rows a feed pushed in between (2026-09-20).
 - [x] Untrusted-SQL guard (`--untrusted-sql`, `AppState::untrusted()`): one read-only query per
       request over registered tables; DDL/DML/COPY/SET, external tables, table functions and
       unregistered table references rejected on the AST, DataFusion `SQLOptions` as a second
-      fence (#11, 2026-09-19).
+      fence (2026-09-19).
 - [x] Per-query limits: memory pool cap (`--max-memory-mb`, spill off), wall-clock timeout on a
       dedicated query runtime (`--query-timeout-secs`), result row/byte caps with a truncation
       note (`--max-result-rows`, `--max-result-mb`); safe defaults, `0` = unlimited; cartesian
-      products refused on the plan in untrusted mode (#12, 2026-09-19).
+      products refused on the plan in untrusted mode (2026-09-19).
 - [x] Hostile-SQL test suite `tests/hostile_sql.rs`: 47 data-driven statements (DDL/DML,
       filesystem and catalog reach, identifier tricks, cartesian and join blow-ups, huge result /
       sort / string, recursive CTE, parser stress) + 9 export path cases, each bounded within
-      10 s, server answers after each; runs in ~11 s (#13, 2026-09-19).
+      10 s, server answers after each; runs in ~11 s (2026-09-19).
 - [x] Quota primitives (`quota.rs`): `Quota` (queries/day, bytes stored, files, bytes and rows per
       file), `UsageMeter` with day rollover and storage reservation, `AppState::with_quota` counting
       every SQL-planning tool call; plain types so a host can persist usage (2026-09-20).
-- [ ] Document performance expectations for large files (what is streamed, what is loaded) (#14).
-- [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release (#8).
+- [ ] Document performance expectations for large files (what is streamed, what is loaded).
+- [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release.
 
 ## Later
 

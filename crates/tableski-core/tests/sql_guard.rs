@@ -1,4 +1,4 @@
-//! Untrusted-SQL guard (#11): decisions on the parsed statement, then the same through the
+//! Untrusted-SQL guard: decisions on the parsed statement, then the same through the
 //! tools of an untrusted `AppState`, and proof that trusted mode is unchanged.
 use datafusion::prelude::SessionContext;
 use std::path::PathBuf;

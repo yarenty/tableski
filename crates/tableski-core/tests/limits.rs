@@ -1,4 +1,4 @@
-//! Per-query limits (#12): result caps truncate with a note, the timeout and the memory pool
+//! Per-query limits: result caps truncate with a note, the timeout and the memory pool
 //! cut a runaway query with a clean error, and the session answers the next query.
 use datafusion::prelude::SessionContext;
 use std::sync::Arc;

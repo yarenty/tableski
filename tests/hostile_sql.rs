@@ -1,4 +1,4 @@
-//! Hostile-SQL suite (#13): bad SQL against a guarded, limited server built from the fixture
+//! Hostile-SQL suite: bad SQL against a guarded, limited server built from the fixture
 //! corpus. Every case must be rejected or bounded within the limits, quickly, and the server
 //! must answer the next query. Data-driven: add a line to `CASES` (or `EXPORT_CASES`).
 

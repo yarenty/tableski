@@ -1,4 +1,4 @@
-//! The embedding contract (#9): a crate that depends on `tableski-core` alone can register a
+//! The embedding contract: a crate that depends on `tableski-core` alone can register a
 //! file and run `query_sql` — no CLI, no HTTP.
 use datafusion::prelude::SessionContext;
 use std::path::PathBuf;

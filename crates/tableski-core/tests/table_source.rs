@@ -1,4 +1,4 @@
-//! `TableSource` (#10): the file source behaves like before, and a test-only in-memory
+//! `TableSource`: the file source behaves like before, and a test-only in-memory
 //! source that a feed appends to shows the next query seeing the new rows, with the server
 //! side untouched. This is the shape a live-bars source will take.
 use async_trait::async_trait;
