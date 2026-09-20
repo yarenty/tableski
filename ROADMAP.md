@@ -23,7 +23,10 @@ Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 202
 - [x] Split into a cargo workspace: `tableski-core` (ingest, registration, tools, framing,
       export, `call_tool` for embedders) + `tableski` (CLI, root package). CLI flags identical;
       the existing tests passed untouched (#9, 2026-09-19).
-- [ ] `TableSource` trait so tables can come from something other than files on disk (#10).
+- [x] `TableSource` trait (`source.rs`): `FileSource` for `--file`/`--csv`/`--xlsx` (CLI now
+      builds one and calls `register_sources`), design note for refreshing/streaming sources and
+      per-tenant registries in the module docs, test-only appending source proves the second
+      query sees rows a feed pushed in between (#10, 2026-09-20).
 - [x] Untrusted-SQL guard (`--untrusted-sql`, `AppState::untrusted()`): one read-only query per
       request over registered tables; DDL/DML/COPY/SET, external tables, table functions and
       unregistered table references rejected on the AST, DataFusion `SQLOptions` as a second

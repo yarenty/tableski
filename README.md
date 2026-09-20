@@ -144,10 +144,17 @@ tableski-core = "0.1"
 ```
 
 ```rust,ignore
-let tables = register_path(&ctx, "orders.xlsx".as_ref(), &IngestOptions::default()).await?;
+let sources: Vec<Box<dyn TableSource>> = vec![Box::new(FileSource::new().path("orders.xlsx"))];
+let tables = register_sources(&ctx, &sources, &IngestOptions::default()).await?;
 let state = AppState::new(Arc::new(ctx), tables);
 let grid = call_tool(&state, "query_sql", json!({ "sql": "SELECT count(*) FROM orders" })).await?;
 ```
+
+Tables come from `TableSource` implementations. `FileSource` is the files-on-disk one; a
+source that streams or refreshes (a price feed, a file that is rewritten) implements the
+same trait and keeps its state behind its own DataFusion `TableProvider`, so every query sees
+the rows that exist when it is planned. The module docs of `tableski_core::source` spell out
+the contract; `crates/tableski-core/tests/table_source.rs` is a worked appending source.
 
 ## How it compares
 

@@ -36,10 +36,12 @@ pub mod export;
 pub mod guard;
 pub mod limits;
 pub mod register;
+pub mod source;
 pub use excel::{HeaderMode, IngestOptions, SheetInfo, register_workbook};
 pub use guard::{Rejection, SqlTrust, check_plan, check_untrusted};
 pub use limits::{Collected, QueryLimits, collect_limited, query_runtime, run_bounded};
 pub use register::register_path;
+pub use source::{FileSource, TableSource, register_sources};
 
 /// `Accept` value clients should send (re-exported from the shared transport).
 pub use emperor_mcp::ACCEPT_STREAMABLE;

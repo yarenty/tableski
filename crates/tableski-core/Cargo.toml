@@ -33,3 +33,4 @@ clap = ["dep:clap"]
 
 [dev-dependencies]
 tokio.workspace = true   # full runtime for the tests only
+async-trait = "0.1"      # TableProvider impl in tests/table_source.rs

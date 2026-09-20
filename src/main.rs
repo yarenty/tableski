@@ -1,11 +1,10 @@
 use clap::Parser;
-use datafusion::prelude::*;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tableski::{
-    ACCEPT_STREAMABLE, AppState, HeaderMode, IngestOptions, QueryLimits, TableEntry, app_router,
-    register_path, register_workbook,
+    ACCEPT_STREAMABLE, AppState, FileSource, HeaderMode, IngestOptions, QueryLimits, TableSource,
+    app_router, register_sources,
 };
 
 #[derive(Parser, Debug)]
@@ -79,39 +78,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let limits = limits_from(&args);
     let ctx = limits.session_context()?;
-    let mut tables = Vec::new();
-
-    if let Some(csv) = &args.csv {
-        if !csv.exists() {
-            return Err(format!("CSV not found: {}", csv.display()).into());
-        }
-        let path = csv.to_str().ok_or("CSV path must be valid UTF-8")?;
-        ctx.register_csv(&args.table, path, CsvReadOptions::new())
-            .await?;
-        tables.push(TableEntry::csv(&args.table, path));
-    }
-
-    if let Some(xlsx) = &args.xlsx {
-        if !xlsx.exists() {
-            return Err(format!("workbook not found: {}", xlsx.display()).into());
-        }
-        let opts = IngestOptions {
-            headers: args.headers,
-            max_rows: args.max_rows,
-        };
-        let infos = register_workbook(&ctx, xlsx, &opts)?;
-        for info in &infos {
-            tables.push(TableEntry::sheet(info, xlsx.display().to_string()));
-        }
-    }
-
     let opts = IngestOptions {
         headers: args.headers,
         max_rows: args.max_rows,
     };
-    for file in &args.files {
-        tables.extend(register_path(&ctx, file, &opts).await?);
+    // Every flag becomes an item of one file source; other kinds of source plug in here.
+    let mut files = FileSource::new();
+    if let Some(csv) = &args.csv {
+        files = files.csv_named(csv, &args.table);
     }
+    if let Some(xlsx) = &args.xlsx {
+        files = files.workbook(xlsx);
+    }
+    for file in &args.files {
+        files = files.path(file);
+    }
+    let sources: Vec<Box<dyn TableSource>> = vec![Box::new(files)];
+    let tables = register_sources(&ctx, &sources, &opts).await?;
 
     for t in &tables {
         match &t.sheet {
