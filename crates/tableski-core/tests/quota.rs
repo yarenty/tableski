@@ -43,6 +43,13 @@ fn daily_queries_count_and_reset_at_the_next_day() {
         }
     );
 
+    // A host restores today's count from its records; the allowance continues.
+    let restored = UsageMeter::new();
+    restored.prime_queries(20_002, 2);
+    restored.consume_query_on(20_002, &quota).unwrap();
+    assert!(restored.consume_query_on(20_002, &quota).is_err());
+    assert_eq!(restored.usage().queries_today, 3);
+
     let unlimited = UsageMeter::new();
     for _ in 0..1_000 {
         unlimited.consume_query_on(1, &Quota::unlimited()).unwrap();

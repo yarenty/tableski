@@ -206,6 +206,13 @@ impl UsageMeter {
         }
     }
 
+    /// Set today's counter from durable records (after a restart or a rebuild), so the
+    /// allowance continues instead of starting over. Replaces the counter for `day`.
+    pub fn prime_queries(&self, day: u64, count: u64) {
+        let mut q = self.queries.lock().unwrap_or_else(|e| e.into_inner());
+        *q = (day, count);
+    }
+
     /// Count one query against today's allowance.
     pub fn consume_query(&self, quota: &Quota) -> Result<(), QuotaExceeded> {
         self.consume_query_on(today(), quota)
