@@ -23,6 +23,10 @@ pre { background:var(--card); border-radius:10px; padding:1rem 1.25rem; overflow
 .links a { color:var(--accent); text-decoration:none; font-weight:600; margin-right:1.5rem; }
 .links a:hover { text-decoration:underline; }
 footer { margin-top:2.5rem; color:var(--muted); font-size:.9rem; }
+.notify { margin-top:2.5rem; max-width:34rem; } .notify label { display:block; color:var(--muted); margin-bottom:.6rem; }
+.notify div { display:flex; gap:.5rem; } .notify input { flex:1; padding:.6rem .7rem; border:1px solid var(--muted); border-radius:8px; background:transparent; color:var(--fg); font:inherit; }
+.notify button { padding:.6rem 1rem; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+.nmsg { color:var(--muted); font-size:.9rem; min-height:1.3em; margin:.5rem 0 0; }
 </style>
 </head>
 <body>
@@ -40,7 +44,19 @@ claude mcp add --transport http tableski http://127.0.0.1:8080/</pre>
     <a href="https://crates.io/crates/tableski">crates.io</a>
     <a href="https://github.com/yarenty/tableski/releases">Binaries</a>
     <a href="https://docs.rs/tableski">Docs</a>
+    <a href="/app/">Sign in</a>
   </div>
+  <form id="notify" class="notify" onsubmit="return notify(event)">
+    <label for="nmail">Hosted tableski.io is in private beta. Leave an email to hear when it opens and what it costs.</label>
+    <div><input id="nmail" type="email" required placeholder="you@example.com"><button type="submit">Tell me</button></div>
+    <p id="nmsg" class="nmsg"></p>
+  </form>
+  <script>
+  async function notify(e){e.preventDefault();var m=document.getElementById('nmsg'),i=document.getElementById('nmail');m.textContent='';
+    try{var r=await fetch('/v1/waitlist',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:i.value,source:'landing'})});
+      m.textContent=r.status===202?'Noted. One email when it opens, nothing else.':(r.status===429?'That address was sent a few times already.':'That does not look like an email address.');if(r.status===202)i.value='';}
+    catch(_){m.textContent='Could not reach the server. Try again in a minute.';}return false;}
+  </script>
   <footer>MIT or Apache-2.0 · hatched in the <a style="color:var(--muted)" href="https://github.com/yarenty/kowalski">kowalski</a> rookery · built on <a style="color:var(--muted)" href="https://github.com/yarenty/emperor-mcp">emperor-mcp</a></footer>
 </main>
 </body>
