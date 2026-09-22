@@ -12,9 +12,11 @@
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--fg); font:18px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
-       display:flex; min-height:100vh; align-items:center; justify-content:center; padding:2rem; }
-main { max-width:640px; }
-h1 { font-size:3rem; letter-spacing:-.02em; }
+       display:flex; min-height:100vh; padding:clamp(1rem,4vw,2rem); }
+/* margin:auto centres when the page fits and starts at the top when it does not; align-items:center
+   would push the title above the viewport on a phone, unreachable by scrolling. */
+main { max-width:640px; margin:auto; width:100%; }
+h1 { font-size:clamp(2.2rem,9vw,3rem); letter-spacing:-.02em; overflow-wrap:anywhere; }
 h1 .ski { color:var(--accent); }
 p.tag { font-size:1.35rem; margin:.75rem 0 1.5rem; }
 p.sub { color:var(--muted); margin-bottom:2rem; }
