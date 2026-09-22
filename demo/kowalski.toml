@@ -1,0 +1,21 @@
+# Minimal kowalski config for the tableski demo: a local model through Ollama and the hosted
+# tableski server. Copy to ~/.config/kowalski/config.toml and put your token in.
+# Local engine instead: url = "http://127.0.0.1:8080/" and drop the headers line.
+
+[ollama]
+host = "localhost"
+port = 11434
+model = "llama3.2"
+
+[chat]
+temperature = 0.1
+stream = true
+
+[memory]
+episodic_path = "db/episodic_buffer"
+
+[[mcp.servers]]
+name = "tableski"
+url = "https://mcp.tableski.io/"
+transport = "http"
+headers = { Authorization = "Bearer tsk_paste_your_token_here" }

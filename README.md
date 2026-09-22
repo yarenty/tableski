@@ -87,7 +87,7 @@ always), ragged rows, format-only padding (trimmed), unicode sheet names, and a 
 cap that fails loudly instead of cutting silently. The nasty-workbook corpus lives in
 [`fixtures/corpus/`](fixtures/corpus/) — every trait has a fixture and a test.
 
-Try the whole flow in one go: `./scripts/demo.sh` (spreadsheet → question → SQL answer →
+New here? The [five-minute demo](demo/) uploads a two-sheet workbook to tableski.io or a local tableski, asks the first question, and shows how to ask the rest in plain words with kowalski, Claude or Cursor. Try the whole local flow in one go: `./scripts/demo.sh` (spreadsheet → question → SQL answer →
 exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.com/charmbracelet/vhs).
 
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and

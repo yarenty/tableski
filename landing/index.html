@@ -3,64 +3,234 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>tableski — every spreadsheet is a table</title>
-<meta name="description" content="tableski serves your spreadsheets to AI agents in SQL. Excel, CSV, Parquet, NDJSON — one penguin-family binary, over MCP.">
+<title>tableski — ask your spreadsheet a question</title>
+<meta name="description" content="Upload an Excel or CSV file, connect the AI you already use, ask in plain words. tableski turns spreadsheets into SQL tables an AI can query, hosted at tableski.io or self-hosted from one binary.">
+<link rel="alternate" type="application/rss+xml" title="tableski blog" href="/blog/feed.xml">
 <style>
-:root { --bg:#ffffff; --fg:#1a1d21; --muted:#5c6470; --accent:#0e7490; --card:#f4f6f8; }
+:root { --bg:#ffffff; --card:#f3f7fa; --fg:#1a1d21; --muted:#5c6470; --accent:#0e7490; --accent-2:#22d3ee; --amber:#f59e0b; --line:#dfe4e9;
+        --band:linear-gradient(120deg,#0e7490 0%,#22d3ee 55%,#fde68a 100%); color-scheme: light dark; }
 @media (prefers-color-scheme: dark) {
-  :root { --bg:#0f1419; --fg:#e6e9ec; --muted:#9aa4af; --accent:#22d3ee; --card:#1a2129; }
+  :root { --bg:#0f1419; --card:#1a2129; --fg:#e6e9ec; --muted:#9aa4af; --accent:#22d3ee; --accent-2:#67e8f9; --amber:#fbbf24; --line:#2a333d;
+          --band:linear-gradient(120deg,#0e7490 0%,#22d3ee 55%,#f59e0b 100%); }
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:var(--bg); color:var(--fg); font:18px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
-       display:flex; min-height:100vh; padding:clamp(1rem,4vw,2rem); }
-/* margin:auto centres when the page fits and starts at the top when it does not; align-items:center
-   would push the title above the viewport on a phone, unreachable by scrolling. */
-main { max-width:640px; margin:auto; width:100%; }
-h1 { font-size:clamp(2.2rem,9vw,3rem); letter-spacing:-.02em; overflow-wrap:anywhere; }
-h1 .ski { color:var(--accent); }
-p.tag { font-size:1.35rem; margin:.75rem 0 1.5rem; }
-p.sub { color:var(--muted); margin-bottom:2rem; }
-pre { background:var(--card); border-radius:10px; padding:1rem 1.25rem; overflow-x:auto;
-      font:15px/1.5 ui-monospace,Menlo,Consolas,monospace; margin-bottom:2rem; }
-.links a { color:var(--accent); text-decoration:none; font-weight:600; margin-right:1.5rem; }
-.links a:hover { text-decoration:underline; }
-footer { margin-top:2.5rem; color:var(--muted); font-size:.9rem; }
-.notify { margin-top:2.5rem; max-width:34rem; } .notify label { display:block; color:var(--muted); margin-bottom:.6rem; }
-.notify div { display:flex; gap:.5rem; } .notify input { flex:1; padding:.6rem .7rem; border:1px solid var(--muted); border-radius:8px; background:transparent; color:var(--fg); font:inherit; }
-.notify button { padding:.6rem 1rem; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+* { box-sizing:border-box; }
+html { background:var(--bg); scroll-behavior:smooth; }
+body { margin:0; background:var(--bg); color:var(--fg); font:18px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+.band { height:8px; background:var(--band); }
+.wrap { max-width:1100px; margin:0 auto; padding:0 clamp(16px,4vw,48px); }
+nav { display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; padding:1rem 0; font-size:.95rem; }
+nav .brand { font-weight:700; font-size:1.25rem; color:var(--fg); text-decoration:none; margin-right:auto; letter-spacing:-.02em; }
+nav .brand span { color:var(--accent); }
+nav a { color:var(--muted); text-decoration:none; } nav a:hover { color:var(--fg); }
+nav a.sign { color:var(--accent); font-weight:600; border:1px solid var(--accent); border-radius:8px; padding:.4rem .9rem; }
+nav a.sign:hover { background:var(--accent); color:#fff; }
+
+.hero { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:2.5rem; align-items:center; padding:2.5rem 0 3rem; }
+@media (max-width:820px) { .hero { grid-template-columns:1fr; padding-top:1.5rem; } .hero figure { order:-1; } }
+h1 { font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.05; letter-spacing:-.025em; margin:0 0 1rem; overflow-wrap:anywhere; }
+h1 em { font-style:normal; background:var(--band); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.lead { font-size:1.2rem; color:var(--muted); max-width:34rem; margin:0 0 1.6rem; }
+.cta { display:flex; gap:.8rem; flex-wrap:wrap; align-items:center; }
+.btn { display:inline-block; padding:.85rem 1.4rem; border-radius:10px; font-weight:600; text-decoration:none; font-size:1.05rem; border:1px solid var(--accent); }
+.btn.main { background:var(--accent); color:#fff; }
+.btn.main:hover { filter:brightness(1.1); }
+.btn.quiet { color:var(--accent); background:transparent; }
+.btn.quiet:hover { background:var(--card); }
+.free { color:var(--muted); font-size:.92rem; margin:.8rem 0 0; }
+.hero figure { margin:0; }
+.hero img { width:100%; height:auto; border-radius:18px; display:block; box-shadow:0 20px 60px rgba(14,116,144,.18); }
+
+h2 { font-size:clamp(1.5rem,3vw,2rem); letter-spacing:-.015em; margin:0 0 .5rem; }
+.sub { color:var(--muted); max-width:44rem; margin:0 0 1.6rem; }
+section { padding:2.5rem 0; }
+section + section { border-top:1px solid var(--line); }
+
+.steps { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.2rem; counter-reset:step; }
+@media (max-width:820px) { .steps { grid-template-columns:1fr; } }
+.steps li { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.3rem 1.4rem 1.4rem; position:relative; overflow:hidden; }
+.steps li::before { content:counter(step); counter-increment:step; display:inline-grid; place-items:center; width:2.2rem; height:2.2rem; border-radius:50%; background:var(--band); color:#0f1419; font-weight:700; margin-bottom:.8rem; }
+.steps h3 { margin:0 0 .4rem; font-size:1.15rem; }
+.steps p { margin:0; color:var(--muted); font-size:.98rem; }
+.steps code { font-size:.9em; background:var(--bg); padding:.1em .4em; border-radius:4px; border:1px solid var(--line); }
+
+.ask { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:1.2rem 1.4rem; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.4rem; margin-top:1.6rem; }
+@media (max-width:820px) { .ask { grid-template-columns:1fr; } }
+.ask p { margin:0 0 .6rem; }
+.ask .you { font-size:1.05rem; }
+.ask .you::before { content:"You: "; color:var(--muted); font-weight:600; }
+.ask .ai::before { content:"AI: "; color:var(--accent); font-weight:600; }
+.ask pre { margin:.6rem 0 0; font:14px/1.5 ui-monospace,Menlo,Consolas,monospace; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.8rem 1rem; overflow-x:auto; }
+.ask table { border-collapse:collapse; font-size:.92rem; margin-top:.6rem; width:100%; }
+.ask th, .ask td { text-align:left; padding:.35rem .6rem; border-bottom:1px solid var(--line); }
+.ask th { color:var(--muted); font-weight:500; }
+.ask td.n { text-align:right; font-variant-numeric:tabular-nums; }
+
+.paths { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.2rem; }
+@media (max-width:820px) { .paths { grid-template-columns:1fr; } }
+.path { border:1px solid var(--line); border-radius:14px; padding:1.4rem 1.5rem; position:relative; }
+.path::before { content:""; position:absolute; left:0; top:0; bottom:0; width:6px; border-radius:14px 0 0 14px; background:var(--band); }
+.path.soon::before { background:var(--amber); }
+.path h3 { margin:0 0 .4rem; font-size:1.25rem; }
+.path .tag { display:inline-block; font-size:.78rem; font-weight:600; letter-spacing:.02em; color:var(--amber); border:1px solid var(--amber); border-radius:999px; padding:.1rem .6rem; margin-left:.5rem; vertical-align:middle; }
+.path ul { margin:.6rem 0 1rem; padding-left:1.1rem; color:var(--muted); }
+.path li { margin-bottom:.25rem; }
+.notify label { display:block; color:var(--muted); margin-bottom:.5rem; font-size:.95rem; }
+.notify div { display:flex; gap:.5rem; flex-wrap:wrap; }
+.notify input { flex:1; min-width:12rem; padding:.65rem .8rem; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; }
+.notify button { padding:.65rem 1.1rem; border:0; border-radius:8px; background:var(--accent); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
 .nmsg { color:var(--muted); font-size:.9rem; min-height:1.3em; margin:.5rem 0 0; }
+
+.why { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1.2rem 2rem; }
+.why h3 { margin:0 0 .3rem; font-size:1.05rem; }
+.why p { margin:0; color:var(--muted); font-size:.97rem; }
+.why a { color:var(--accent); }
+
+.plans { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.2rem; }
+@media (max-width:820px) { .plans { grid-template-columns:1fr; } }
+.plan { border:1px solid var(--line); border-radius:14px; padding:1.3rem 1.4rem; }
+.plan h3 { margin:0; font-size:1.15rem; }
+.plan .price { font-size:2rem; font-weight:700; letter-spacing:-.02em; margin:.3rem 0 .6rem; }
+.plan .price small { font-size:.9rem; font-weight:400; color:var(--muted); letter-spacing:0; }
+.plan ul { margin:0; padding-left:1.1rem; color:var(--muted); font-size:.95rem; }
+.plan li { margin-bottom:.2rem; }
+.note { color:var(--muted); font-size:.92rem; margin:1rem 0 0; }
+
+pre.cli { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.25rem; overflow-x:auto; font:15px/1.6 ui-monospace,Menlo,Consolas,monospace; margin:0; }
+.links a { color:var(--accent); text-decoration:none; font-weight:600; margin-right:1.4rem; }
+.links { margin-top:1rem; }
+footer.site { border-top:1px solid var(--line); margin-top:1rem; padding:1.4rem 0 2.5rem; color:var(--muted); font-size:.9rem; }
+footer.site a { color:var(--muted); }
 </style>
 </head>
 <body>
-<main>
-  <h1>table<span class="ski">ski</span> 🐧</h1>
-  <p class="tag"><strong>Every spreadsheet is a table</strong> — tableski serves them to your agents in SQL.</p>
-  <p class="sub">Excel, CSV, Parquet, NDJSON → real SQL tables (Apache DataFusion), spoken over the
-     Model Context Protocol. Joins across sheets and formats, typed columns, results exported back
-     to .csv/.xlsx. Single binary, hardened for real-world workbooks.</p>
-  <pre>cargo install tableski
+<div class="band"></div>
+<div class="wrap">
+<nav>
+  <a class="brand" href="/">table<span>ski</span> 🐧</a>
+  <a href="#how">How it works</a>
+  <a href="#plans">Plans</a>
+  <a href="/blog/">Blog</a>
+  <a href="https://github.com/yarenty/tableski">GitHub</a>
+  <a class="sign" href="/app/">Sign in</a>
+</nav>
+
+<header class="hero">
+  <div>
+    <h1>Ask your <em>spreadsheet</em> a question.</h1>
+    <p class="lead">Upload an Excel or CSV file. Connect the AI you already use. Ask in plain words and get an answer that was computed, not guessed.</p>
+    <div class="cta">
+      <a class="btn main" href="/app/">Start free</a>
+      <a class="btn quiet" href="#how">See how it works</a>
+    </div>
+    <p class="free">No card. Sign in with Google, Microsoft, GitHub or an email. Free files are kept for 24 hours.</p>
+  </div>
+  <figure>
+    <img src="/img/hero.jpg" alt="A penguin in a small office slides a spreadsheet across the desk to a friendly robot, which hands back a single neat answer card" width="1024" height="1024" onerror="this.closest('figure').hidden=true">
+  </figure>
+</header>
+
+<section id="how">
+  <h2>Three steps, about five minutes</h2>
+  <p class="sub">Every sheet in your file becomes a table with proper columns and types. From then on, SQL does the work, whether you write it or an AI does.</p>
+  <ol class="steps">
+    <li><h3>Add a spreadsheet</h3><p>Drop an <code>.xlsx</code>, <code>.csv</code> or <code>.parquet</code> file on the Files page. Cells are read, never executed. You see every table it produced, with row counts, before asking anything.</p></li>
+    <li><h3>Ask it something</h3><p>The Query page runs your first questions right in the browser. Click a table to see its rows, then try a total, a filter, a join across two sheets.</p></li>
+    <li><h3>Connect your AI</h3><p>Create a token and copy a ready-made setup for Claude Desktop, Claude Code, Cursor or kowalski. Then ask in plain words. The AI writes the SQL, tableski runs it on your file.</p></li>
+  </ol>
+  <div class="ask">
+    <div>
+      <p class="you">Which customers are more than 60 days late, and how much do they owe in total?</p>
+      <p class="ai">Four customers, €18,420 in total. Largest is Northwind Traders at €9,800, 74 days.</p>
+      <p class="free">The AI turned that into one query over your <em>invoices</em> sheet and ran it here:</p>
+      <pre>SELECT customer, sum(amount) AS owed, max(days_late) AS days
+FROM invoices
+WHERE days_late &gt; 60
+GROUP BY customer
+ORDER BY owed DESC</pre>
+    </div>
+    <div>
+      <table>
+        <thead><tr><th>customer</th><th>owed</th><th>days</th></tr></thead>
+        <tbody>
+          <tr><td>Northwind Traders</td><td class="n">9,800.00</td><td class="n">74</td></tr>
+          <tr><td>Blue Harbour Ltd</td><td class="n">4,120.00</td><td class="n">91</td></tr>
+          <tr><td>Kestrel &amp; Sons</td><td class="n">2,900.00</td><td class="n">63</td></tr>
+          <tr><td>Marlow Foods</td><td class="n">1,600.00</td><td class="n">68</td></tr>
+        </tbody>
+      </table>
+      <p class="free">Numbers come from your cells. If a total looks wrong, the SQL is right there to check.</p>
+    </div>
+  </div>
+</section>
+
+<section id="paths">
+  <h2>Two kinds of tables</h2>
+  <p class="sub">The same engine, two sources of data.</p>
+  <div class="paths">
+    <div class="path">
+      <h3>Your files</h3>
+      <p>For anyone who lives in spreadsheets: sales, invoices, stock, budgets, exports from the systems that will not talk to each other.</p>
+      <ul>
+        <li>Excel workbooks, CSV, Parquet, NDJSON; one table per sheet</li>
+        <li>Joins across sheets and files, dates that are dates, typed numbers</li>
+        <li>Results exported back to <code>.xlsx</code> or <code>.csv</code></li>
+      </ul>
+      <a class="btn main" href="/app/">Start free</a>
+    </div>
+    <div class="path soon">
+      <h3>Live market data <span class="tag">coming</span></h3>
+      <p>For traders: prices and indicators as tables the AI can query next to your own positions sheet. "Which of my holdings dropped below their 50-day average this week?"</p>
+      <ul>
+        <li>Minute, hourly and daily bars for a launch list of symbols</li>
+        <li>Indicators as SQL: moving averages, RSI, MACD, Bollinger, drawdown</li>
+        <li>Joined with your uploaded portfolio, in one query</li>
+      </ul>
+      <form class="notify" onsubmit="return notify(event,'trader')">
+        <label for="tmail">Leave an email to be first in when the trader path opens.</label>
+        <div><input id="tmail" type="email" required placeholder="you@example.com" autocomplete="email"><button type="submit">Keep me posted</button></div>
+        <p class="nmsg" data-for="tmail"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <h2>Why it works</h2>
+  <div class="why">
+    <div><h3>Computed, not guessed</h3><p>The AI never reads your cells into its memory and adds them up in its head. It writes SQL; a real query engine computes the answer over every row.</p></div>
+    <div><h3>Fast enough to talk to</h3><p>A 100,000-row workbook answers in tens of milliseconds, a million-row CSV in well under a second. <a href="/blog/fast-enough-for-a-conversation.html">Measured, with numbers.</a></p></div>
+    <div><h3>Read-only by construction</h3><p>Only SELECT-shaped queries over your own tables run. Timeouts, row and memory caps, per-minute limits. <a href="/blog/an-ai-with-sql-and-good-manners.html">How the guard works.</a></p></div>
+    <div><h3>Your file stays yours</h3><p>Nothing is written back into your workbook. Free files are removed after 24 hours; delete anything, or the whole account, at any time. <a href="/legal/privacy.html">Privacy</a>.</p></div>
+  </div>
+</section>
+
+<section id="plans">
+  <h2>Plans</h2>
+  <p class="sub">Start free and stay free for one file at a time. Pay only when you want files kept and more of them.</p>
+  <div class="plans">
+    <div class="plan"><h3>Free</h3><div class="price">€0</div><ul><li>1 file, up to 5 MB</li><li>100,000 rows per file</li><li>100 questions a day</li><li>Files kept for 24 hours</li></ul></div>
+    <div class="plan"><h3>Starter</h3><div class="price">€9 <small>a month</small></div><ul><li>5 files, up to 25 MB each</li><li>1 million rows per file</li><li>1,000 questions a day</li><li>Files kept until you delete them</li></ul></div>
+    <div class="plan"><h3>Pro</h3><div class="price">€29 <small>a month</small></div><ul><li>50 files, up to 100 MB each</li><li>5 million rows per file</li><li>5,000 questions a day</li><li>Files kept until you delete them</li></ul></div>
+  </div>
+  <p class="note">Beta prices; they may change with 30 days' notice. Payments are handled by our merchant of record, taxes included where they apply.</p>
+</section>
+
+<section id="selfhost">
+  <h2>Or run it yourself</h2>
+  <p class="sub">The engine is open source, one binary, MIT or Apache-2.0. Point it at a file and connect any MCP client.</p>
+<pre class="cli">curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
 tableski --file your-workbook.xlsx
 claude mcp add --transport http tableski http://127.0.0.1:8080/</pre>
-  <div class="links">
-    <a href="https://github.com/yarenty/tableski">GitHub</a>
-    <a href="https://crates.io/crates/tableski">crates.io</a>
-    <a href="https://github.com/yarenty/tableski/releases">Binaries</a>
-    <a href="https://docs.rs/tableski">Docs</a>
-    <a href="/blog/">Blog</a>
-    <a href="/app/">Sign in</a>
-  </div>
-  <form id="notify" class="notify" onsubmit="return notify(event)">
-    <label for="nmail">Hosted tableski.io is in private beta. Leave an email to hear when it opens and what it costs.</label>
-    <div><input id="nmail" type="email" required placeholder="you@example.com"><button type="submit">Tell me</button></div>
-    <p id="nmsg" class="nmsg"></p>
-  </form>
-  <script>
-  async function notify(e){e.preventDefault();var m=document.getElementById('nmsg'),i=document.getElementById('nmail');m.textContent='';
-    try{var r=await fetch('/v1/waitlist',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:i.value,source:'landing'})});
-      m.textContent=r.status===202?'Noted. One email when it opens, nothing else.':(r.status===429?'That address was sent a few times already.':'That does not look like an email address.');if(r.status===202)i.value='';}
-    catch(_){m.textContent='Could not reach the server. Try again in a minute.';}return false;}
-  </script>
-  <footer>MIT or Apache-2.0 · hatched in the <a style="color:var(--muted)" href="https://github.com/yarenty/kowalski">kowalski</a> rookery · built on <a style="color:var(--muted)" href="https://github.com/yarenty/emperor-mcp">emperor-mcp</a></footer>
-</main>
+  <p class="links"><a href="https://github.com/yarenty/tableski">GitHub</a><a href="https://crates.io/crates/tableski">crates.io</a><a href="https://github.com/yarenty/tableski/releases">Binaries</a><a href="https://docs.rs/tableski">Docs</a><a href="https://github.com/yarenty/tableski/tree/main/demo">Five-minute demo</a></p>
+</section>
+
+<footer class="site">tableski.io is run by Skycorp Limited, Ireland · <a href="/legal/terms.html">Terms</a> · <a href="/legal/privacy.html">Privacy</a> · hatched in the <a href="https://github.com/yarenty/kowalski">kowalski</a> rookery, built on <a href="https://github.com/yarenty/emperor-mcp">emperor-mcp</a></footer>
+</div>
+<script>
+async function notify(e, source){e.preventDefault();var f=e.target,i=f.querySelector('input'),m=f.querySelector('.nmsg');m.textContent='';
+  try{var r=await fetch('/v1/waitlist',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:i.value,source:source})});
+    m.textContent=r.status===202?'Noted. One email when it opens, nothing else.':(r.status===429?'That address was sent a few times already.':'That does not look like an email address.');if(r.status===202)i.value='';}
+  catch(_){m.textContent='Could not reach the server. Try again in a minute.';}return false;}
+</script>
 </body>
 </html>
