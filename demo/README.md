@@ -46,11 +46,15 @@ tableski server and a language model, and the SQL is written for you.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/yarenty/kowalski/main/install.sh | bash
-ollama pull llama3.2                                       # or any model kowalski supports; local = free
 cp kowalski.toml ~/.config/kowalski/config.toml            # tableski.io + your token, or 127.0.0.1:8080 for local
+export OPENAI_API_KEY=...                                  # key for the chat model named in [llm]
 kowalski-cli mcp tools -c ~/.config/kowalski/config.toml   # lists list_tables, query_sql, get_schema, ...
 kowalski-cli run -c ~/.config/kowalski/config.toml
 ```
+
+The config names an OpenAI-compatible chat endpoint and model; any Chat Completions server works,
+and the key comes from the environment so it never sits in a file. No key at all? Swap the `[llm]`
+block for `[ollama]` with a local model, free and offline.
 
 Then type, for example:
 
