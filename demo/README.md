@@ -72,4 +72,4 @@ prints the exact config for each with your token filled in.
 ## Your own file
 
 Replace `sample.xlsx` with any workbook (one table per sheet) or CSV, and ask about that instead.
-On the free plan a file is 5 MB and 100,000 rows at most and is kept for 24 hours.
+On the free plan a file is 1 MB and 100,000 rows at most and is kept for 24 hours.
