@@ -3,8 +3,15 @@
 > The public OSS engine only. Work is tracked in this repo's
 > [issues](https://github.com/yarenty/tableski/issues); tick items here when they ship.
 
-Crate version **0.1.0** ([crates.io](https://crates.io/crates/tableski), Aug 2026), licence
+Crate version **0.2.0** ([crates.io](https://crates.io/crates/tableski), Sep 2026; the engine as
+[`tableski-core`](https://crates.io/crates/tableski-core)), licence
 `MIT OR Apache-2.0`. **1.0.0** marks the stable engine API.
+
+## Released in 0.2.0 (Sep 2026)
+
+The 1.0 items ticked below so far: the `tableski-core` / `tableski` workspace split, the
+`TableSource` trait, the untrusted-SQL guard, per-query limits, the hostile-SQL suite and the
+quota primitives. Everything else stays as in 0.1.0.
 
 ## Done (0.1.0, Aug 2026)
 

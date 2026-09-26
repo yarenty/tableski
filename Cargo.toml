@@ -2,7 +2,7 @@
 members = ["crates/tableski-core"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.98"   # latest stable at the time of the release; CI builds on stable
 license = "MIT OR Apache-2.0"
@@ -11,7 +11,7 @@ repository = "https://github.com/yarenty/tableski"
 homepage = "https://github.com/yarenty/tableski"
 
 [workspace.dependencies]
-tableski-core = { path = "crates/tableski-core", version = "0.1.0" }
+tableski-core = { path = "crates/tableski-core", version = "0.2.0" }
 emperor-mcp = "0.1"
 axum = "0.8"
 clap = { version = "4.5", features = ["derive"] }

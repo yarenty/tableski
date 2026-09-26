@@ -1,6 +1,6 @@
 # tableski — AI agent notes
 
-**Crate**: `tableski` · **Version**: 0.1.0 (on crates.io) · **Licence**: MIT OR Apache-2.0 · **Rust**: latest stable (`rust-version` in `Cargo.toml` and the Dockerfile base track it; bump both together)
+**Crate**: `tableski` · **Version**: 0.2.0 (on crates.io, with `tableski-core`) · **Licence**: MIT OR Apache-2.0 · **Rust**: latest stable (`rust-version` in `Cargo.toml` and the Dockerfile base track it; bump both together)
 
 ## Scope
 
