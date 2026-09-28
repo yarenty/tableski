@@ -90,6 +90,12 @@ cap that fails loudly instead of cutting silently. The nasty-workbook corpus liv
 New here? The [five-minute demo](demo/) uploads a two-sheet workbook to tableski.io or a local tableski, asks the first question, and shows how to ask the rest in plain words with kowalski, Claude or Cursor. Try the whole local flow in one go: `./scripts/demo.sh` (spreadsheet → question → SQL answer →
 exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.com/charmbracelet/vhs).
 
+With [kowalski](https://github.com/yarenty/kowalski), the questions come in plain words and the answers come back as a
+workbook. Its Spreadsheet analyst profiles the tables through tableski, the model writes one SQL query per question, and
+every number comes from the query engine:
+
+![kowalski's Spreadsheet analyst asking tableski three questions and delivering the answers](https://raw.githubusercontent.com/yarenty/kowalski/main/docs/img/kowalski-demo.gif)
+
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
 > NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
 
