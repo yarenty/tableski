@@ -94,7 +94,7 @@ With [kowalski](https://github.com/yarenty/kowalski), the questions come in plai
 workbook. Its Spreadsheet analyst profiles the tables through tableski, the model writes one SQL query per question, and
 every number comes from the query engine:
 
-![kowalski's Spreadsheet analyst asking tableski three questions and delivering the answers](https://raw.githubusercontent.com/yarenty/kowalski/main/docs/img/kowalski-demo.gif)
+![kowalski's Spreadsheet analyst asking tableski two questions and a follow-up, answers from SQL](https://raw.githubusercontent.com/yarenty/kowalski/main/docs/img/kowalski-demo.gif)
 
 > Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
 > NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
