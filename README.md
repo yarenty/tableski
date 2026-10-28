@@ -4,6 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/tableski.svg)](https://crates.io/crates/tableski)
 [![docs.rs](https://docs.rs/tableski/badge.svg)](https://docs.rs/tableski)
 [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/yarenty/tableski)
 
 **Every spreadsheet is a table — tableski serves them to your agents in SQL.**
 
