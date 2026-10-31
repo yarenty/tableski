@@ -1,6 +1,6 @@
 # tableski — AI agent notes
 
-**Crate**: `tableski` · **Version**: 0.2.0 (on crates.io, with `tableski-core`) · **Licence**: MIT OR Apache-2.0 · **Rust**: latest stable (`rust-version` in `Cargo.toml` and the Dockerfile base track it; bump both together)
+**Crate**: `tableski` · **Version**: 0.2.1 (on crates.io, with `tableski-core`) · **Licence**: MIT OR Apache-2.0 · **Rust**: latest stable (`rust-version` in `Cargo.toml` and the Dockerfile base track it; bump both together)
 
 ## Scope
 
@@ -29,12 +29,13 @@ Layout (cargo workspace): the root package is the **CLI** `tableski` (`src/main.
 
 ## Documentation closure (mandatory)
 
-After any refactor or behaviour change, update **[`README.md`](./README.md)** and **[`ROADMAP.md`](./ROADMAP.md)**; add a `CHANGELOG.md` entry once the file exists (first release). **Shipping code without updating docs is incomplete work.**
+After any refactor or behaviour change, update **[`README.md`](./README.md)** and **[`ROADMAP.md`](./ROADMAP.md)**; add a [`CHANGELOG.md`](./CHANGELOG.md) entry under `[Unreleased]` for anything a user would notice. **Shipping code without updating docs is incomplete work.**
 
 ## Related docs
 
 - [`README.md`](./README.md) — install, connect, run, comparison
 - [`ROADMAP.md`](./ROADMAP.md) — crate roadmap
+- [`CHANGELOG.md`](./CHANGELOG.md) — what each release changed
 - [`ANNOUNCEMENT.md`](./ANNOUNCEMENT.md) — launch drafts (manual publish)
 - [`landing/`](./landing/) — tableski.io landing page
 

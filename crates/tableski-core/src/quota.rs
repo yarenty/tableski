@@ -262,12 +262,12 @@ impl UsageMeter {
     pub fn remove_file(&self, bytes: u64) {
         let _ = self
             .bytes
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |b| {
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |b| {
                 Some(b.saturating_sub(bytes))
             });
         let _ = self
             .files
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |f| {
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |f| {
                 Some(f.saturating_sub(1))
             });
     }

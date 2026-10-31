@@ -3,9 +3,14 @@
 > The public OSS engine only. Work is tracked in this repo's
 > [issues](https://github.com/yarenty/tableski/issues); tick items here when they ship.
 
-Crate version **0.2.0** ([crates.io](https://crates.io/crates/tableski), Sep 2026; the engine as
+Crate version **0.2.1** ([crates.io](https://crates.io/crates/tableski), Oct 2026; the engine as
 [`tableski-core`](https://crates.io/crates/tableski-core)), licence
 `MIT OR Apache-2.0`. **1.0.0** marks the stable engine API.
+
+## Released in 0.2.1 (Oct 2026)
+
+Security update of the Excel dependencies (zip 9.1) and Rust 1.99; no change in behaviour. See
+[`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Released in 0.2.0 (Sep 2026)
 
@@ -50,7 +55,8 @@ quota primitives. Everything else stays as in 0.1.0.
       file), `UsageMeter` with day rollover and storage reservation, `AppState::with_quota` counting
       every SQL-planning tool call; plain types so a host can persist usage (2026-09-20).
 - [ ] Document performance expectations for large files (what is streamed, what is loaded).
-- [ ] `CHANGELOG.md`, semver policy, docs.rs green for every release.
+- [x] `CHANGELOG.md`, from 0.2.1 on (2026-10-31).
+- [ ] Semver policy, docs.rs green for every release.
 
 ## Later
 
