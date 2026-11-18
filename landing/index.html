@@ -3,11 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>tableski — market data as tables your AI can query (work in progress)</title>
+<title>tableski — every live trading feed is a table (work in progress)</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="description" content="tableski is being built for traders: prices and indicators as SQL tables an AI can query next to your own positions sheet. Work in progress. The open-source engine runs on your own machine today.">
-<link rel="alternate" type="application/rss+xml" title="tableski blog" href="/blog/feed.xml">
 <style>
 :root { --bg:#ffffff; --card:#f3f7fa; --fg:#1a1d21; --muted:#5c6470; --accent:#0e7490; --accent-2:#22d3ee; --amber:#f59e0b; --line:#dfe4e9;
         --band:linear-gradient(120deg,#0e7490 0%,#22d3ee 55%,#fde68a 100%); color-scheme: light dark; }
@@ -118,14 +117,13 @@ footer.site a { color:var(--muted); }
   <a class="brand" href="/">table<span>ski</span> 🐧</a>
   <a href="#building">What is being built</a>
   <a href="#use">How to use it</a>
-  <a class="keep" href="/blog/">Blog</a>
   <a href="https://github.com/yarenty/tableski">GitHub</a>
   <a class="sign" href="/app/">Sign in</a>
 </nav>
 
 <header class="hero">
   <div>
-    <h1>Market data your AI can <em>query</em>.</h1>
+    <h1>Every live trading feed is a <em>table</em>.</h1>
     <p class="lead">tableski is for traders: prices and indicators as tables, next to your own positions sheet. You ask in plain words, the AI writes the SQL, and the answer is computed, not guessed.</p>
     <p class="free"><strong>Work in progress.</strong> The trader service is not open yet. The engine underneath is open source and runs on your own machine today; the steps are below.</p>
     <div class="cta">
@@ -134,7 +132,7 @@ footer.site a { color:var(--muted); }
     </div>
   </div>
   <figure>
-    <img src="/img/hero.jpg?v=1" alt="A penguin in a small office slides a spreadsheet across the desk to a friendly robot, which hands back a single neat answer card" width="1024" height="1024" onerror="this.closest('figure').hidden=true">
+    <img src="/img/hero.jpg?v=1" alt="A penguin in a small office slides a sheet of figures across the desk to a friendly robot, which hands back a single neat answer card" width="1024" height="1024" onerror="this.closest('figure').hidden=true">
   </figure>
 </header>
 
@@ -169,10 +167,10 @@ footer.site a { color:var(--muted); }
 <pre class="cli">curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
 tableski --file positions.xlsx
 claude mcp add --transport http tableski http://127.0.0.1:8080/</pre>
-  <p class="links"><a href="https://github.com/yarenty/tableski">GitHub</a><a href="https://crates.io/crates/tableski">crates.io</a><a href="https://github.com/yarenty/tableski/releases">Binaries</a><a href="https://docs.rs/tableski">Docs</a><a href="https://github.com/yarenty/tableski/tree/main/demo">Five-minute demo</a></p>
+  <p class="links"><a href="https://github.com/yarenty/tableski">GitHub</a><a href="https://crates.io/crates/tableski">crates.io</a><a href="https://github.com/yarenty/tableski/releases">Binaries</a><a href="https://docs.rs/tableski">Docs</a></p>
 </section>
 
-<footer class="site">tableski.io is run by Skycorp Limited, Ireland · <a href="/legal/terms.html">Terms</a> · <a href="/legal/privacy.html">Privacy</a> · <a href="/blog/">Blog</a> · <a href="https://github.com/yarenty/tableski">GitHub</a> · hatched in the <a href="https://github.com/yarenty/kowalski">kowalski</a> rookery, built on <a href="https://github.com/yarenty/emperor-mcp">emperor-mcp</a></footer>
+<footer class="site">tableski.io is run by Skycorp Limited, Ireland · <a href="/legal/terms.html">Terms</a> · <a href="/legal/privacy.html">Privacy</a> · <a href="https://github.com/yarenty/tableski">GitHub</a> · hatched in the <a href="https://github.com/yarenty/kowalski">kowalski</a> rookery, built on <a href="https://github.com/yarenty/emperor-mcp">emperor-mcp</a></footer>
 </div>
 <script>
 async function notify(e, source){e.preventDefault();var f=e.target,i=f.querySelector('input'),m=f.querySelector('.nmsg');m.textContent='';
