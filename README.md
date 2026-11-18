@@ -13,8 +13,8 @@ your own positions sheet, over the [Model Context Protocol](https://modelcontext
 
 > **Work in progress.** The trader service at [tableski.io](https://tableski.io) is not open
 > yet and takes no new accounts. What works today is the engine in this repository: one
-> penguin-family binary that turns the files you already have (Excel, CSV, Parquet, JSON:
-> prices, trades, positions) into queryable tables on your own machine.
+> penguin-family binary that turns the files you already have (price history, trades,
+> positions) into queryable tables on your own machine.
 
 - Single binary, stateless Streamable HTTP — built on the
   [emperor-mcp](https://github.com/yarenty/emperor-mcp) framework (Emperor Profile P1
@@ -59,42 +59,34 @@ Or raw HTTP: POST JSON-RPC to `/` with `Accept: application/json` (see below).
 ## Run
 
 ```bash
-# One model for every format: --file registers by extension, table name = file stem
-# (.csv .parquet .json/.ndjson/.jsonl; workbooks .xlsx/.xls/.ods = one table per sheet)
-cargo run -- --file fixtures/sample.xlsx --file fixtures/sample.parquet \
-             --file fixtures/sample.ndjson --export-dir ./exports
-# (--csv/--xlsx flags still work; name collisions get _2/_3 suffixes)
+# --file registers a table per file, named after the file stem
+# (.csv .parquet .json/.ndjson/.jsonl; workbook exports .xlsx/.xls/.ods = one table per sheet)
+tableski --file bars.parquet --file positions.csv --export-dir ./exports
 ```
 
 Ask it something (tools: `list_tables`, `query_sql`, `get_schema`, `column_statistics`,
 `export_result` — all output framed as data per Emperor Profile E8). SQL joins work across
-formats: an xlsx sheet against a Parquet file against an NDJSON log. `export_result` writes
-a query's rows to `.csv`/`.xlsx` — only inside the `--export-dir` sandbox (relative names,
-no `..`; the tool is disabled unless the operator passes the flag):
+files and formats: a Parquet file of bars against a CSV of positions against an NDJSON log of
+fills. `export_result` writes a query's rows to `.csv`/`.xlsx` — only inside the `--export-dir`
+sandbox (relative names, no `..`; the tool is disabled unless the operator passes the flag).
+
+With a `bars` table (`symbol`, `ts`, `close`) and a `positions` table (`symbol`, `qty`), the
+value of each holding at its latest close is one query:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8080/ \
   -H 'Content-Type: application/json' -H 'Accept: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query_sql",
-       "arguments":{"sql":"SELECT p.name, SUM(o.amount) AS total FROM people p JOIN orders o ON p.name = o.name GROUP BY p.name ORDER BY total DESC"}}}'
-# => ada 150.5, linus 99.99 — a SQL join across two sheets of one workbook
+       "arguments":{"sql":"SELECT p.symbol, p.qty * b.close AS value FROM positions p JOIN bars b ON b.symbol = p.symbol WHERE b.ts = (SELECT max(ts) FROM bars WHERE symbol = p.symbol) ORDER BY value DESC"}}}'
 ```
 
-Sheet names are slugified into table names (`People` → `people`, `2024 Orders` →
-`t_2024_orders`); first rows become column names when they look like headers
-(`--headers auto|first-row|none` to override). Column types are inferred: integers,
-floats, booleans, dates (as timestamps), text.
+Column types are inferred: integers, floats, booleans, timestamps, text. First rows become
+column names when they look like headers (`--headers auto|first-row|none` to override), and
+`--max-rows` fails loudly instead of cutting a file silently.
 
-Real-world workbooks are messy — tableski handles the mess: both Excel date systems
-(1900 **and** 1904), formula cells (cached values ingest; `#DIV/0!`-style errors become
-NULL), merged cells (top-left value, NULL continuations), display formats (raw values,
-always), ragged rows, format-only padding (trimmed), unicode sheet names, and a `--max-rows`
-cap that fails loudly instead of cutting silently. The nasty-workbook corpus lives in
-[`fixtures/corpus/`](fixtures/corpus/) — every trait has a fixture and a test.
-
-> Status: the engine serves CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks),
-> Parquet, and NDJSON today; results export to csv/xlsx; binaries ship per release. Live market
-> data (bars and indicators as tables) is in progress and not released.
+> Status: the engine serves CSV, Parquet, NDJSON and workbook files today; results export to
+> csv/xlsx; binaries ship per release. Live market data (bars and indicators as tables) is in
+> progress and not released.
 
 ### Serving clients you do not trust
 
@@ -103,7 +95,7 @@ single-user setup. Add `--untrusted-sql` when the server is reachable by agents 
 do not control:
 
 ```sh
-tableski --file sales.xlsx --untrusted-sql
+tableski --file positions.csv --untrusted-sql
 ```
 
 Then only read-only queries run: `SELECT`, `WITH`, `VALUES`, `EXPLAIN`, one statement per
@@ -147,10 +139,10 @@ tableski-core = "0.1"
 ```
 
 ```rust,ignore
-let sources: Vec<Box<dyn TableSource>> = vec![Box::new(FileSource::new().path("orders.xlsx"))];
+let sources: Vec<Box<dyn TableSource>> = vec![Box::new(FileSource::new().path("bars.parquet"))];
 let tables = register_sources(&ctx, &sources, &IngestOptions::default()).await?;
 let state = AppState::new(Arc::new(ctx), tables);
-let grid = call_tool(&state, "query_sql", json!({ "sql": "SELECT count(*) FROM orders" })).await?;
+let grid = call_tool(&state, "query_sql", json!({ "sql": "SELECT count(*) FROM bars" })).await?;
 ```
 
 Tables come from `TableSource` implementations. `FileSource` is the files-on-disk one; a
@@ -162,19 +154,6 @@ the contract; `crates/tableski-core/tests/table_source.rs` is a worked appending
 For a server with tenants, `Quota` and `UsageMeter` (queries per day, bytes stored, files,
 rows per file) plug into the same state with `with_quota`; the meter is in memory, persisting
 usage is the host's job.
-
-## How it compares
-
-Honest positioning — different tools solve different problems:
-
-| | tableski | openpyxl-based Excel MCP servers | Google-Sheets MCPs |
-|---|---|---|---|
-| Ask questions over data | **SQL engine** (DataFusion): joins, aggregates, filters — across sheets *and* file formats | cell/range reads; analysis logic lands in the model's context | per-API calls against live Sheets |
-| Formats | xlsx/xls/ods + CSV + Parquet + NDJSON, one table model | xlsx (often read *and write*, incl. formatting/charts — tableski doesn't edit workbooks) | Google Sheets only |
-| Deployment | single static binary, stateless Streamable HTTP ([Emperor Profile P1](https://github.com/yarenty/emperor-mcp/blob/main/PROFILE.md)) | Python runtime + deps | hosted API + OAuth |
-| Output safety | every tool result framed as data (prompt-injection mitigation) | typically raw | typically raw |
-
-If you need to *edit* workbooks (styles, charts, cell writes), pair tableski with a writer-oriented server; tableski is the analysis and export engine.
 
 ## Contributing
 
