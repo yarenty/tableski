@@ -4,18 +4,15 @@ A spreadsheet, an AI, real answers. This folder is the whole demo: a two-sheet w
 (`sample.xlsx`: `people` and `orders`), a script that puts it into tableski and asks the first
 question, and a kowalski config that lets you ask the rest in plain words.
 
-Two ways to run it. **Hosted** needs nothing installed but `curl`. **Local** runs the engine on
-your machine and needs no account.
+It runs the engine on your machine and needs no account. (The service at tableski.io is work in
+progress and takes no new accounts.)
 
-## Hosted (tableski.io)
-
-1. Sign in at https://tableski.io/app/ (Google, Microsoft, GitHub or email). Free, no card.
-2. On **Tokens**, create a token and copy it once.
-3. Run the script; it uploads the workbook, lists the tables and asks the first question:
+## Local (your machine, no account)
 
 ```sh
-export TABLESKI_TOKEN=tsk_...        # the token from step 2
-./demo.sh
+curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
+tableski --file sample.xlsx --export-dir ./exports        # listens on http://127.0.0.1:8080/
+TABLESKI_URL=http://127.0.0.1:8080/ ./demo.sh             # in another terminal, no token needed
 ```
 
 You should see two tables, `people` and `orders`, and this answer computed by a JOIN across the
@@ -28,15 +25,14 @@ ada    | 150.5
 linus  | 99.99
 ```
 
-The same file and the same tables are now on the **Query** page of the app, where you can type
-SQL yourself.
+## With an existing tableski.io account
 
-## Local (your machine, no account)
+If you already have an account, the same script works against it: create a token on **Tokens**,
+then
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
-tableski --file sample.xlsx --export-dir ./exports        # listens on http://127.0.0.1:8080/
-TABLESKI_URL=http://127.0.0.1:8080/ ./demo.sh             # in another terminal, no token needed
+export TABLESKI_TOKEN=tsk_...
+./demo.sh
 ```
 
 ## Ask in plain words with kowalski
@@ -46,7 +42,7 @@ tableski server and a language model, and the SQL is written for you.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/yarenty/kowalski/main/install.sh | bash
-cp kowalski.toml ~/.config/kowalski/config.toml            # tableski.io + your token, or 127.0.0.1:8080 for local
+cp kowalski.toml ~/.config/kowalski/config.toml            # 127.0.0.1:8080 for local
 export OPENAI_API_KEY=...                                  # key for the chat model named in [llm]
 kowalski-cli mcp tools -c ~/.config/kowalski/config.toml   # lists list_tables, query_sql, get_schema, ...
 kowalski-cli run -c ~/.config/kowalski/config.toml
@@ -66,10 +62,10 @@ Then type, for example:
 The agent calls `list_tables`, writes the SQL, calls `query_sql`, and answers with the rows. The
 SQL it used is in the tool call, so a wrong number can always be checked.
 
-The same setup works from Claude Desktop, Claude Code or Cursor: the **Connect** page of the app
-prints the exact config for each with your token filled in.
+The same setup works from Claude Desktop, Claude Code or Cursor; the main README shows the
+client configuration.
 
 ## Your own file
 
-Replace `sample.xlsx` with any workbook (one table per sheet) or CSV, and ask about that instead.
-On the free plan a file is 1 MB and 100,000 rows at most and is kept for 24 hours.
+Replace `sample.xlsx` with any workbook (one table per sheet) or CSV, for example an export of
+your positions or trades, and ask about that instead.
