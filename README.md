@@ -6,11 +6,15 @@
 [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 [![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/yarenty/tableski)
 
-**Every spreadsheet is a table — tableski serves them to your agents in SQL.**
+**Every live trading feed is a table — tableski serves it to your agents in SQL. Work in progress.**
 
-Excel, CSV, Parquet, JSON — one penguin-family binary that turns your data files into
-queryable tables and serves them to AI agents over the
-[Model Context Protocol](https://modelcontextprotocol.io).
+tableski is being built for traders: prices and indicators as tables an AI can query next to
+your own positions sheet, over the [Model Context Protocol](https://modelcontextprotocol.io).
+
+> **Work in progress.** The trader service at [tableski.io](https://tableski.io) is not open
+> yet and takes no new accounts. What works today is the engine in this repository: one
+> penguin-family binary that turns the files you already have (Excel, CSV, Parquet, JSON:
+> prices, trades, positions) into queryable tables on your own machine.
 
 - Single binary, stateless Streamable HTTP — built on the
   [emperor-mcp](https://github.com/yarenty/emperor-mcp) framework (Emperor Profile P1
@@ -88,17 +92,9 @@ always), ragged rows, format-only padding (trimmed), unicode sheet names, and a 
 cap that fails loudly instead of cutting silently. The nasty-workbook corpus lives in
 [`fixtures/corpus/`](fixtures/corpus/) — every trait has a fixture and a test.
 
-New here? The [five-minute demo](demo/) uploads a two-sheet workbook to tableski.io or a local tableski, asks the first question, and shows how to ask the rest in plain words with kowalski, Claude or Cursor. Try the whole local flow in one go: `./scripts/demo.sh` (spreadsheet → question → SQL answer →
-exported workbook). `demo.tape` renders it as a GIF with [vhs](https://github.com/charmbracelet/vhs).
-
-With [kowalski](https://github.com/yarenty/kowalski), the questions come in plain words and the answers come back as a
-workbook. Its Spreadsheet analyst profiles the tables through tableski, the model writes one SQL query per question, and
-every number comes from the query engine:
-
-![kowalski's Spreadsheet analyst asking tableski two questions and a follow-up, answers from SQL](https://raw.githubusercontent.com/yarenty/kowalski/main/docs/img/kowalski-demo.gif)
-
-> Status: CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks), Parquet, and
-> NDJSON all serve today; results export to csv/xlsx; binaries ship per release. Launch is next.
+> Status: the engine serves CSV, Excel (xlsx/xls/ods, hardened against real-world workbooks),
+> Parquet, and NDJSON today; results export to csv/xlsx; binaries ship per release. Live market
+> data (bars and indicators as tables) is in progress and not released.
 
 ### Serving clients you do not trust
 
