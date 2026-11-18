@@ -10,7 +10,7 @@ use tableski::{
 #[derive(Parser, Debug)]
 #[command(name = "tableski")]
 #[command(
-    about = "Every live trading feed is a table (work in progress) — SQL, schema, and column stats over CSV/Parquet/Excel files via MCP"
+    about = "Every live trading feed is a table (work in progress) — SQL, schema, and column stats over CSV/Parquet/NDJSON files via MCP"
 )]
 struct Args {
     #[arg(long, default_value = "0.0.0.0:8080")]
