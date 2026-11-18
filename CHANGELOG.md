@@ -4,6 +4,19 @@ All notable changes to tableski and tableski-core. The format follows [Keep a Ch
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-18
+
+> Trader focus in the package descriptions, and dependency security updates; no change in behaviour.
+
+### Changed
+- **Descriptions and README.** The package descriptions, keywords, `--help` summary and README describe where tableski is going: live trading feeds as tables, work in progress, with the file engine as what works today. Flags, tools and formats are unchanged.
+- emperor-mcp 0.4 (from 0.1); the MCP surface tableski serves is the same.
+
+### Security
+- **calamine 0.38** - RUSTSEC-2026-0436 (panic and unbounded allocation in the parser for `.xls` and `.xlsb` on malformed input). tableski reads `.xls` files, so a crafted file could stop the server or exhaust its memory; update if you load files you did not create.
+- **rmcp 3.11 via emperor-mcp 0.4** - RUSTSEC-2026-0462 (unbounded response buffering in Streamable HTTP clients). tableski is a server and never runs the client, so it was not exposed.
+- **chrono, chrono-tz, humantime** - RUSTSEC-2026-0543, RUSTSEC-2026-0555 and RUSTSEC-2026-0542 are unmaintained notices with no vulnerability reported. They are recorded as accepted in `deny.toml`: arrow and object_store require them; the entries go when DataFusion releases without them.
+
 ## [0.2.1] - 2026-10-31
 
 > Security update of the Excel dependencies; no change in behaviour.

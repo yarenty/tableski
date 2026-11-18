@@ -3,9 +3,14 @@
 > The public OSS engine only. Work is tracked in this repo's
 > [issues](https://github.com/yarenty/tableski/issues); tick items here when they ship.
 
-Crate version **0.2.1** ([crates.io](https://crates.io/crates/tableski), Oct 2026; the engine as
+Crate version **0.2.2** ([crates.io](https://crates.io/crates/tableski), Nov 2026; the engine as
 [`tableski-core`](https://crates.io/crates/tableski-core)), licence
 `MIT OR Apache-2.0`. **1.0.0** marks the stable engine API.
+
+## Released in 0.2.2 (Nov 2026)
+
+Package descriptions and README follow the trader focus; dependency security updates
+(calamine 0.38, emperor-mcp 0.4); no change in behaviour. See [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Released in 0.2.1 (Oct 2026)
 
