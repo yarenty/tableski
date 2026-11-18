@@ -9,7 +9,7 @@
 **Every live trading feed is a table — tableski serves it to your agents in SQL. Work in progress.**
 
 tableski is being built for traders: prices and indicators as tables an AI can query next to
-your own positions sheet, over the [Model Context Protocol](https://modelcontextprotocol.io).
+your own positions, over the [Model Context Protocol](https://modelcontextprotocol.io).
 
 > **Work in progress.** The trader service at [tableski.io](https://tableski.io) is not open
 > yet and takes no new accounts. What works today is the engine in this repository: one
@@ -60,14 +60,14 @@ Or raw HTTP: POST JSON-RPC to `/` with `Accept: application/json` (see below).
 
 ```bash
 # --file registers a table per file, named after the file stem
-# (.csv .parquet .json/.ndjson/.jsonl; workbook exports .xlsx/.xls/.ods = one table per sheet)
+# (.csv .parquet .json/.ndjson/.jsonl and more; `tableski --help` lists every format)
 tableski --file bars.parquet --file positions.csv --export-dir ./exports
 ```
 
 Ask it something (tools: `list_tables`, `query_sql`, `get_schema`, `column_statistics`,
 `export_result` — all output framed as data per Emperor Profile E8). SQL joins work across
 files and formats: a Parquet file of bars against a CSV of positions against an NDJSON log of
-fills. `export_result` writes a query's rows to `.csv`/`.xlsx` — only inside the `--export-dir`
+fills. `export_result` writes a query's rows to a file — only inside the `--export-dir`
 sandbox (relative names, no `..`; the tool is disabled unless the operator passes the flag).
 
 With a `bars` table (`symbol`, `ts`, `close`) and a `positions` table (`symbol`, `qty`), the
@@ -84,8 +84,8 @@ Column types are inferred: integers, floats, booleans, timestamps, text. First r
 column names when they look like headers (`--headers auto|first-row|none` to override), and
 `--max-rows` fails loudly instead of cutting a file silently.
 
-> Status: the engine serves CSV, Parquet, NDJSON and workbook files today; results export to
-> csv/xlsx; binaries ship per release. Live market data (bars and indicators as tables) is in
+> Status: the engine serves CSV, Parquet and NDJSON files today; results export to files;
+> binaries ship per release. Live market data (bars and indicators as tables) is in
 > progress and not released.
 
 ### Serving clients you do not trust

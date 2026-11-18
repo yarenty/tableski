@@ -28,10 +28,10 @@ reqwest = { version = "0.13", features = ["json"] }
 # workflow and the integration tests (regression fence, fixtures/ beside them) stay unchanged.
 [package]
 name = "tableski"
-description = "Every live trading feed is a table (work in progress) — SQL over CSV, Parquet, NDJSON and Excel files served to AI agents over MCP"
+description = "Every live trading feed is a table (work in progress) — SQL over CSV, Parquet and NDJSON files served to AI agents over MCP"
 documentation = "https://docs.rs/tableski"
 readme = "README.md"
-keywords = ["mcp", "sql", "excel", "spreadsheet", "datafusion"]
+keywords = ["mcp", "sql", "datafusion", "parquet", "csv"]
 categories = ["command-line-utilities", "database-implementations", "parser-implementations"]
 version.workspace = true
 edition.workspace = true

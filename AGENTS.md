@@ -36,7 +36,6 @@ After any refactor or behaviour change, update **[`README.md`](./README.md)** an
 - [`README.md`](./README.md) — install, connect, run, comparison
 - [`ROADMAP.md`](./ROADMAP.md) — crate roadmap
 - [`CHANGELOG.md`](./CHANGELOG.md) — what each release changed
-- [`ANNOUNCEMENT.md`](./ANNOUNCEMENT.md) — launch drafts (manual publish)
 - [`landing/`](./landing/) — tableski.io landing page
 
 ## Business planning

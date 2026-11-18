@@ -1,8 +1,8 @@
 [package]
 name = "tableski-core"
-description = "The tableski engine: DataFusion tables over Excel, CSV, Parquet and NDJSON files, with the MCP tool dispatch — no transport, embed it anywhere"
+description = "The tableski engine: DataFusion tables over CSV, Parquet and NDJSON files, with the MCP tool dispatch — no transport, embed it anywhere"
 readme = "README.md"
-keywords = ["mcp", "sql", "excel", "spreadsheet", "datafusion"]
+keywords = ["mcp", "sql", "datafusion", "parquet", "csv"]
 categories = ["database-implementations", "parser-implementations"]
 version.workspace = true
 edition.workspace = true

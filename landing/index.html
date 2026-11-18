@@ -6,7 +6,7 @@
 <title>tableski — every live trading feed is a table (work in progress)</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="description" content="tableski is being built for traders: prices and indicators as SQL tables an AI can query next to your own positions sheet. Work in progress. The open-source engine runs on your own machine today.">
+<meta name="description" content="tableski is being built for traders: prices and indicators as SQL tables an AI can query next to your own positions. Work in progress. The open-source engine runs on your own machine today.">
 <style>
 :root { --bg:#ffffff; --card:#f3f7fa; --fg:#1a1d21; --muted:#5c6470; --accent:#0e7490; --accent-2:#22d3ee; --amber:#f59e0b; --line:#dfe4e9;
         --band:linear-gradient(120deg,#0e7490 0%,#22d3ee 55%,#fde68a 100%); color-scheme: light dark; }
@@ -124,7 +124,7 @@ footer.site a { color:var(--muted); }
 <header class="hero">
   <div>
     <h1>Every live trading feed is a <em>table</em>.</h1>
-    <p class="lead">tableski is for traders: prices and indicators as tables, next to your own positions sheet. You ask in plain words, the AI writes the SQL, and the answer is computed, not guessed.</p>
+    <p class="lead">tableski is for traders: prices and indicators as tables, next to your own positions. You ask in plain words, the AI writes the SQL, and the answer is computed, not guessed.</p>
     <p class="free"><strong>Work in progress.</strong> The trader service is not open yet. The engine underneath is open source and runs on your own machine today; the steps are below.</p>
     <div class="cta">
       <a class="btn main" href="#use">How to use it</a>
@@ -132,7 +132,7 @@ footer.site a { color:var(--muted); }
     </div>
   </div>
   <figure>
-    <img src="/img/hero.jpg?v=1" alt="A penguin in a small office slides a sheet of figures across the desk to a friendly robot, which hands back a single neat answer card" width="1024" height="1024" onerror="this.closest('figure').hidden=true">
+    <img src="/img/hero.jpg?v=1" alt="A penguin in a small office slides a page of figures across the desk to a friendly robot, which hands back a single neat answer card" width="1024" height="1024" onerror="this.closest('figure').hidden=true">
   </figure>
 </header>
 
@@ -145,7 +145,7 @@ footer.site a { color:var(--muted); }
     <ul>
       <li>Hourly and daily bars for a short list of symbols</li>
       <li>Indicators as SQL: moving averages, RSI, MACD, Bollinger, drawdown</li>
-      <li>Joined with your own positions sheet, in one query</li>
+      <li>Joined with your own positions file, in one query</li>
       <li>Read-only by construction: only SELECT-shaped queries run, with time and size limits</li>
     </ul>
     <form class="notify" onsubmit="return notify(event,'trader')">
@@ -161,11 +161,11 @@ footer.site a { color:var(--muted); }
   <p class="sub">The engine is open source, one binary, MIT or Apache-2.0. It turns a file of prices, trades or positions into tables and serves them to any MCP client.</p>
   <ol class="steps">
     <li><h3>Install</h3><p>One command on macOS or Linux; Windows binaries are on the releases page. Or <code>cargo install tableski</code>.</p></li>
-    <li><h3>Point it at a file</h3><p>An <code>.xlsx</code>, <code>.csv</code> or <code>.parquet</code> file: every sheet becomes a table with typed columns. Nothing leaves your machine.</p></li>
+    <li><h3>Point it at a file</h3><p>A <code>.csv</code>, <code>.parquet</code> or <code>.ndjson</code> file becomes a table with typed columns. Nothing leaves your machine.</p></li>
     <li><h3>Connect your AI and ask</h3><p>Claude Code, Cursor, kowalski or any other MCP client. Ask in plain words; every answer shows the SQL it came from.</p></li>
   </ol>
 <pre class="cli">curl -fsSL https://raw.githubusercontent.com/yarenty/tableski/main/install.sh | sh
-tableski --file positions.xlsx
+tableski --file positions.csv
 claude mcp add --transport http tableski http://127.0.0.1:8080/</pre>
   <p class="links"><a href="https://github.com/yarenty/tableski">GitHub</a><a href="https://crates.io/crates/tableski">crates.io</a><a href="https://github.com/yarenty/tableski/releases">Binaries</a><a href="https://docs.rs/tableski">Docs</a></p>
 </section>
