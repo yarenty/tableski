@@ -4,7 +4,7 @@ All notable changes to tableski and tableski-core. The format follows [Keep a Ch
 
 ## [Unreleased]
 
-## [0.2.2] - 2026-11-18
+## [0.2.2] - 2026-11-21
 
 > Trader focus in the package descriptions, and dependency security updates; no change in behaviour.
 
