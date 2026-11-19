@@ -14,6 +14,12 @@ ignore = [
   { id = "RUSTSEC-2026-0391", reason = "arrow-ipc and parquet use only zstd::bulk; the with_context stream constructors are never called" },
   { id = "RUSTSEC-2026-0398", reason = "the seekable feature of zstd-safe is not enabled anywhere in the graph" },
   { id = "RUSTSEC-2026-0403", reason = "only stream::write::Decoder is affected; arrow and parquet decode with zstd::bulk" },
+  # Unmaintained notices, no vulnerability reported. chrono and chrono-tz are arrow's date and time types
+  # (and calamine's date cells); humantime comes with object_store. Remove each entry when DataFusion,
+  # arrow and object_store release without the crate.
+  { id = "RUSTSEC-2026-0543", reason = "chrono: unmaintained notice only; required by arrow 58 and calamine, no replacement they accept" },
+  { id = "RUSTSEC-2026-0555", reason = "chrono-tz: unmaintained notice only; required by arrow-array 58 for time zones" },
+  { id = "RUSTSEC-2026-0542", reason = "humantime: unmaintained notice only; required by object_store 0.13 for duration settings" },
 ]
 
 [licenses]
